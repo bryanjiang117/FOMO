@@ -9,10 +9,10 @@ Steven Bai - s2bai@uwaterloo.ca
 # TEAM CONTRACT
 
 ## Contact (Discord)
-Alan Chung - .aquatix
-Bryan Jiang - bryanjiang
-Becky Jeong - peepeepoo_poo
-Steven Bai - bleachuggr
+Alan Chung - .aquatix  
+Bryan Jiang - bryanjiang  
+Becky Jeong - peepeepoo_poo  
+Steven Bai - bleachuggr  
 
 ## Meet-up
 Minimum every Wednesday class
@@ -21,10 +21,10 @@ Minimum every Wednesday class
 Discord groupchat
 
 ## Team Roles 
-Project Lead: Alan 
-Designer: Bryan  
-Frontend Lead: Steven
-Backend Lead: Becky
+Project Lead: Alan   
+Designer: Bryan    
+Frontend Lead: Steven  
+Backend Lead: Becky  
 
 ## Decision-Making
 In person discussions for important decisions and vote continuously until we reach at least a 3 - 1 decision.
