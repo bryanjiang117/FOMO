@@ -9,5 +9,8 @@ Steven Bai - s2bai@uwaterloo.ca
 ## Team Contract
 https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Team-Contract
 
+## Design Proposal
+https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Design-Proposal
+
 ## JDK Version
 21.04
