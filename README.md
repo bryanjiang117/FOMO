@@ -9,6 +9,9 @@ Steven Bai - s2bai@uwaterloo.ca
 ## Team Contract
 https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Team-Contract
 
+# Project Proposal
+https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Project-Proposal
+
 ## Design Proposal
 https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Design-Proposal
 
