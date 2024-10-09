@@ -15,8 +15,10 @@ https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Project-Proposal
 ## Design Proposal
 https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Design-Proposal
 
-## Figma
 https://www.figma.com/design/pKz6JZShG19Zb27rPfJyiA/CS346-M3?node-id=0-1&t=lpk1pILXoF7HGpYg-1
+
+## Sprint 1 
+https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/M4:-Meeting-Minutes-1
 
 ## JDK Version
 21.04
