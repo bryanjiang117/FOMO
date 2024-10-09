@@ -42,7 +42,7 @@ fun Map(viewState: MapViewModel) {
     val cameraPositionState = rememberCameraPositionState {
       position = CameraPosition.fromLatLngZoom(viewState.center, 15f)
     }
-
+    Log.d("MapDebug", "API key is: ${BuildConfig.GOOGLE_MAPS_API_KEY}")
     GoogleMap(
       modifier = Modifier.fillMaxSize(),
       cameraPositionState = cameraPositionState,
