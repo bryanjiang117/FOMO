@@ -94,6 +94,7 @@ fun LocationChecker(
   )
 
   var requestBackgroundPermission by remember { mutableStateOf(false) }
+  val viewState: MapViewModel = viewModel()
 
   val locationPermissionLauncher = rememberLauncherForActivityResult(
     contract = ActivityResultContracts.RequestMultiplePermissions(),
@@ -121,7 +122,7 @@ fun LocationChecker(
     } else if (!backgroundPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       requestBackgroundPermission = true
     } else {
-      getPreciseLocation(context)
+      getPreciseLocation(context, viewState)
     }
   }
 
@@ -129,21 +130,22 @@ fun LocationChecker(
   if (requestBackgroundPermission) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       RequestBackgroundLocationPermission()
-      getPreciseLocation(context)
+      getPreciseLocation(context, viewState)
     }
   }
 }
 
 
 @SuppressLint("MissingPermission")
-fun getPreciseLocation(context: Context){
+fun getPreciseLocation(context: Context, viewState: MapViewModel){
   val fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
   fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
     if (location != null) {
       val latitude = location.latitude
       val longitude = location.longitude
-      Log.d("PreciseLocation", "Latitude: $latitude, Longitude: $longitude")
-      println("Latitude: $latitude, Longitude: $longitude")
+
+      viewState.updateUserLocation(latitude, longitude)
+
     } else {
       Log.d("PreciseLocation", "Location is null, unable to retrieve location.")
       println("Location is null, unable to retrieve location.")
