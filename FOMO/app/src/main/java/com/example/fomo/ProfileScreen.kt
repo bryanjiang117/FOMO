@@ -9,12 +9,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.core.screen.Screen
+import com.example.fomo.const.activities
 
 class ProfileScreen : Screen {
   @Composable
   override fun Content() {
     val myViewModel: MyViewModel = viewModel()
     var showDialog by remember { mutableStateOf(false) }  // popup state
+    var droppedDown by remember { mutableStateOf(false) } // display dropdown
     var newDisplayName by remember { mutableStateOf("") } // updated name state
 
     Column(
@@ -39,6 +41,40 @@ class ProfileScreen : Screen {
         ) {
           Text("Change", color = MaterialTheme.colorScheme.primary)
         }
+      }
+
+      // Row to display status and the "Change" button on the same line
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Text(
+          text = "Current Activity: ${myViewModel.activity.emoji} ${myViewModel.activity.name}",
+          style = MaterialTheme.typography.bodyMedium,
+          modifier = Modifier.weight(1f) // Push the text to the left
+        )
+
+        TextButton(
+          onClick = { droppedDown = true }
+        ) {
+          Text("Change", color = MaterialTheme.colorScheme.primary)
+        }
+
+        DropdownMenu(
+          expanded = droppedDown,
+          onDismissRequest = { droppedDown = false },
+        ) {
+          activities.forEach { activity ->
+            DropdownMenuItem(
+              text = { Text(text = "${activity.emoji} ${activity.name}") },
+              onClick = {
+                myViewModel.updateActivity(activity)
+                droppedDown = false
+              }
+            )
+          }
+        }
+
       }
 
       if (showDialog) {
