@@ -43,6 +43,8 @@ fun Map(viewState: MapViewModel) {
       position = CameraPosition.fromLatLngZoom(viewState.center, 15f)
     }
     Log.d("MapDebug", "API key is: ${BuildConfig.GOOGLE_MAPS_API_KEY}")
+    Log.d("MapDebug", "Center is: ${viewState.center}")
+
     GoogleMap(
       modifier = Modifier.fillMaxSize(),
       cameraPositionState = cameraPositionState,

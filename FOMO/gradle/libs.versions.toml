@@ -10,6 +10,8 @@ lifecycleViewmodelCompose = "2.6.1"
 activityCompose = "1.8.0"
 composeBom = "2024.04.01"
 voyager = "1.0.0-rc05"
+places = "4.0.0"
+playServicesMaps = "19.0.0"
 googleMapsCompose = "4.4.1"
 
 [libraries]
@@ -29,6 +31,8 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 voyager-navigator = { group = "cafe.adriel.voyager", name = "voyager-navigator", version.ref = "voyager" }
+places = { module = "com.google.android.libraries.places:places", version.ref = "places" }
+play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
 google-maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "googleMapsCompose" }
 google-maps-compose-utils = { group = "com.google.maps.android", name = "maps-compose-utils", version.ref = "googleMapsCompose" }
 google-maps-compose-widgets = { group = "com.google.maps.android", name = "maps-compose-widgets", version.ref = "googleMapsCompose" }

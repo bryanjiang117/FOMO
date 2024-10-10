@@ -60,6 +60,8 @@ dependencies {
   implementation(libs.voyager.navigator)
 
   // Google Maps
+  implementation(libs.places)
+  implementation(libs.play.services.maps)
   implementation(libs.google.maps.compose)
   implementation(libs.google.maps.compose.utils)
   implementation(libs.google.maps.compose.widgets)
