@@ -7,4 +7,10 @@ import androidx.compose.runtime.setValue
 
 class MyViewModel : ViewModel() {
     var curScreen by mutableStateOf("ur mom")
+
+    var displayName by mutableStateOf("Kevin Yang") // Initial display name
+
+    fun updateDisplayName(newName: String) {
+        displayName = newName
+    }
 }
