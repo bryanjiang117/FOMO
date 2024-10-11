@@ -21,6 +21,14 @@ import com.google.maps.android.compose.GoogleMapComposable
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
 import com.google.maps.android.compose.rememberCameraPositionState
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberMarkerState
 
 
 class MapScreen : Screen {
@@ -51,7 +59,18 @@ fun Map(viewState: MapViewModel) {
       onMapLoaded = {
         isMapLoaded = true
         Log.d("MapDebug", "Map loaded successfully")},
-    )
+    ) {
+      if (isMapLoaded) {
+        val homePosition = LatLng(viewState.userLatitude, viewState.userLongitude)  // Create LatLng object
+        Marker(
+          state = rememberMarkerState(key = "Home", homePosition),
+          title = "Your Location",
+          snippet = "This is where you are",
+        )
+      }
+    }
+
+
 
     // ...
   }

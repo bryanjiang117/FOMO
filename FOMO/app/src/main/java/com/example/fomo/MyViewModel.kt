@@ -1,7 +1,9 @@
 package com.example.fomo
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.example.fomo.models.Activity
@@ -20,4 +22,6 @@ class MyViewModel : ViewModel() {
     fun updateActivity(newActivity: Activity) {
         activity = newActivity
     }
+
+
 }
