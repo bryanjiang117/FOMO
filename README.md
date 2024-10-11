@@ -22,6 +22,7 @@ https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/M4:-Meeting-Minutes-1
 
 ## Releases
 0.10:  
+APK: https://git.uwaterloo.ca/b3jiang/team-6/-/blob/main/releases/fomo010.apk?ref_type=heads  
 https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Version-0.10-Release  
 https://git.uwaterloo.ca/b3jiang/team-6/-/releases/0.10
 
