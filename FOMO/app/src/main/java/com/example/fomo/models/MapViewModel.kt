@@ -1,12 +1,10 @@
-package com.example.fomo
+package com.example.fomo.models
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
 import androidx.compose.runtime.mutableDoubleStateOf
 
 class MapViewModel : ViewModel() {
