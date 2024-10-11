@@ -20,5 +20,8 @@ https://www.figma.com/design/pKz6JZShG19Zb27rPfJyiA/CS346-M3?node-id=0-1&t=lpk1p
 ## Sprint 1 
 https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/M4:-Meeting-Minutes-1
 
+## Releases
+https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Version-0.10-Release
+
 ## JDK Version
 21.04
