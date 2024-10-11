@@ -35,11 +35,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
-import androidx.core.content.PackageManagerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
+import com.example.fomo.models.MapViewModel
+import com.example.fomo.models.MyViewModel
 import com.example.fomo.ui.theme.FOMOTheme
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -69,12 +70,15 @@ class MainActivity : ComponentActivity() {
 
     enableEdgeToEdge()
     setContent {
+      val myViewModel: MyViewModel = viewModel()
+      val mapViewModel: MapViewModel = viewModel()
       FOMOTheme {
         LocationChecker(
           foregroundPermissionsGranted = locationPermissionsAlreadyGranted,
-          backgroundPermissionGranted = backgroundLocationGranted
+          backgroundPermissionGranted = backgroundLocationGranted,
+          mapViewModel = mapViewModel
         )
-        NavigatorFun()
+        NavigatorFun(myViewModel = myViewModel, mapViewModel = mapViewModel)
 
       }
     }
@@ -84,7 +88,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun LocationChecker(
   foregroundPermissionsGranted: Boolean,
-  backgroundPermissionGranted: Boolean
+  backgroundPermissionGranted: Boolean,
+  mapViewModel: MapViewModel
 ){
   val context = LocalContext.current
 
@@ -94,7 +99,6 @@ fun LocationChecker(
   )
 
   var requestBackgroundPermission by remember { mutableStateOf(false) }
-  val viewState: MapViewModel = viewModel()
 
   val locationPermissionLauncher = rememberLauncherForActivityResult(
     contract = ActivityResultContracts.RequestMultiplePermissions(),
@@ -122,7 +126,7 @@ fun LocationChecker(
     } else if (!backgroundPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       requestBackgroundPermission = true
     } else {
-      getPreciseLocation(context, viewState)
+      getPreciseLocation(context, mapViewModel)
     }
   }
 
@@ -130,7 +134,7 @@ fun LocationChecker(
   if (requestBackgroundPermission) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       RequestBackgroundLocationPermission()
-      getPreciseLocation(context, viewState)
+      getPreciseLocation(context, mapViewModel)
     }
   }
 }
@@ -188,15 +192,17 @@ fun RequestBackgroundLocationPermission() {
 }
 
 @Composable
-fun NavigatorFun(){
-  Navigator(MapScreen()) { Content() }
+fun NavigatorFun(myViewModel: MyViewModel, mapViewModel: MapViewModel) {
+  Navigator(MapScreen(myViewModel, mapViewModel)) { Content(myViewModel, mapViewModel) }
 }
 
 @Composable
-fun Content() {
-  val myViewModel: MyViewModel = viewModel()
+fun Content(myViewModel: MyViewModel, mapViewModel: MapViewModel) {
 
-  Scaffold(modifier = Modifier.fillMaxSize(), bottomBar = { Navbar(viewModel = myViewModel) }) {
+  Scaffold(
+    modifier = Modifier.fillMaxSize(),
+    bottomBar = { Navbar(viewModel = myViewModel, mapViewModel = mapViewModel) }
+  ) {
       innerPadding ->
     // Pass the innerPadding as a modifier to the Content
     Column(
@@ -214,21 +220,33 @@ fun State(state: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun Navbar(viewModel: MyViewModel) {
+fun Navbar(viewModel: MyViewModel, mapViewModel: MapViewModel) {
   val navigator = LocalNavigator.current
   Row(
       modifier = Modifier.fillMaxWidth(),
   ) {
-    Button(onClick = { navigator?.push(MapScreen()) }, modifier = Modifier.weight(1f)) {
+    Button(
+      onClick = { navigator?.push(MapScreen(viewModel, mapViewModel)) },
+      modifier = Modifier.weight(1f)
+    ) {
       Text("Map")
     }
-    Button(onClick = { navigator?.push(FriendsScreen()) }, modifier = Modifier.weight(1f)) {
+    Button(
+      onClick = { navigator?.push(FriendsScreen()) },
+      modifier = Modifier.weight(1f)
+    ) {
       Text("Friends")
     }
-    Button(onClick = { navigator?.push(ProfileScreen()) }, modifier = Modifier.weight(1f)) {
+    Button(
+      onClick = { navigator?.push(ProfileScreen(viewModel)) },
+      modifier = Modifier.weight(1f)
+    ) {
       Text("Profile")
     }
-    Button(onClick = { navigator?.push(SettingsScreen()) }, modifier = Modifier.weight(1f)) {
+    Button(
+      onClick = { navigator?.push(SettingsScreen()) },
+      modifier = Modifier.weight(1f)
+    ) {
       Text("Settings")
     }
   }
