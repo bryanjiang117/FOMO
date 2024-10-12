@@ -14,7 +14,6 @@ GOOGLE_MAPS_API_KEY=AIzaSyAKNnl2qh4XIwMwICFUaVYwn4rS8Pm6lqc
 Alan Chung - hw2chung@uwaterloo.ca  
 Bryan Jiang - b3jiang@uwaterloo.ca  
 Becky Jeong - bjeong@uwaterloo.ca  
-
 Steven Bai - s2bai@uwaterloo.ca  
 
 ## Team Contract
