@@ -5,10 +5,16 @@ We are building a real-time social app for students and young adults to stay con
 ## Installation
 Git Clone and create a secrets.properties file under FOMO folder with the appropriate API keys
 
+<!---
+// secrets.properties file content
+GOOGLE_MAPS_API_KEY=AIzaSyAKNnl2qh4XIwMwICFUaVYwn4rS8Pm6lqc
+-->
+
 ## Members
 Alan Chung - hw2chung@uwaterloo.ca  
 Bryan Jiang - b3jiang@uwaterloo.ca  
 Becky Jeong - bjeong@uwaterloo.ca  
+
 Steven Bai - s2bai@uwaterloo.ca  
 
 ## Team Contract
