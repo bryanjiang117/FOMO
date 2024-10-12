@@ -1,6 +1,6 @@
 # Team-6
 
-We are building a real-time social app for students and young adults to stay connected with their friends and make their busy days just a little bit more fun.  
+We are building a real-time Map UI social app for students and young adults to stay connected with their friends and make their busy days just a little bit more fun.  
 
 ## Installation
 Git Clone and create a secrets.properties file under FOMO folder with the appropriate API keys
