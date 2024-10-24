@@ -91,4 +91,8 @@ dependencies {
   debugImplementation(libs.androidx.ui.tooling)
   debugImplementation(libs.androidx.ui.test.manifest)
   implementation(libs.voyager.navigator)
+
+  // Icons
+  implementation(libs.material.icons.core)
+  implementation(libs.material.icons.extended)
 }
