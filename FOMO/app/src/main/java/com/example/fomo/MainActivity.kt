@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -58,11 +59,34 @@ import com.example.fomo.models.MyViewModel
 import com.example.fomo.ui.theme.FOMOTheme
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.launch
 
+val supabase = createSupabaseClient(
+  supabaseUrl = "https://vwapghztewutqqmzaoib.supabase.co",
+  supabaseKey = "${BuildConfig.SUPABASE_KEY}"
+) {
+  install(Postgrest)
+}
 class MainActivity : ComponentActivity() {
   @RequiresApi(Build.VERSION_CODES.Q)
+
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+
+    lifecycleScope.launch {
+      try {
+        val response = supabase.postgrest["users"].select()
+        Log.d("SupabaseConnection", "Database connected: $response")
+      } catch (e: Exception) {
+        Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+      }
+    }
+
 
     val fineLocationGranted =
         ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
