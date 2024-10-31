@@ -14,7 +14,7 @@ class MapViewModel : ViewModel() {
   var userLatitude by mutableDoubleStateOf(0.0)
   var center by mutableStateOf(LatLng(43.4723, -80.5449))
 
-  var pac = LatLng(43.47221980317695, -80.54570549190352)
+  private var pac = LatLng(43.47221980317695, -80.54570549190352)
 
   fun calculateDistance(point1: LatLng, point2: LatLng): Double {
     return SphericalUtil.computeDistanceBetween(point1, point2)
