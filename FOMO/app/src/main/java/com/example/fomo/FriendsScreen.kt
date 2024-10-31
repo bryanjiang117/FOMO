@@ -29,15 +29,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import cafe.adriel.voyager.core.screen.Screen
 import android.util.Log
+import com.example.fomo.models.MapViewModel
+import com.example.fomo.models.MyViewModel
+import com.google.android.gms.maps.model.LatLng
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.mutableStateOf
-import com.example.fomo.models.MyViewModel
 import com.example.fomo.const.Friend
 import com.example.fomo.const.activities
 import com.example.fomo.const.Colors
 
-class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
+class FriendsScreen(private val myViewModel: MyViewModel, private val mapViewModel: MapViewModel) : Screen {
+  var friendsList = myViewModel.friendsList
+  var myLocation = mapViewModel.center
   @Composable
   override fun Content() {
     var selectedTab by remember { mutableStateOf(0)}
@@ -59,6 +63,14 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
         1 -> ReceivedRequests()
         2 -> SentRequests()
       }
+//      Text("current userId:" + myViewModel.userId.toString())
+//      Text("Friends List:")
+//      for(friend in friendsList) {
+//        val friendLocation = LatLng(friend.latitude, friend.longitude)
+//        val distance = mapViewModel.calculateDistance(friendLocation, myLocation)
+//
+//        Text(friend.displayName + ": " + distance.toInt().toString() + "m away")
+//      }
     }
   }
 }

@@ -140,7 +140,7 @@ fun Navbar(viewModel: MyViewModel, mapViewModel: MapViewModel) {
             Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Map Icon")
           }
       Button(
-          onClick = { navigator?.push(FriendsScreen(viewModel)) },
+          onClick = { navigator?.push(FriendsScreen(viewModel, mapViewModel)) },
           modifier = Modifier.weight(1f),
           shape = RectangleShape,
           contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
