@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 
 class MyViewModel : ViewModel() {
 
+
     val supabase = createSupabaseClient(
         supabaseUrl = "https://vwapghztewutqqmzaoib.supabase.co",
         supabaseKey = BuildConfig.SUPABASE_KEY
@@ -28,16 +29,25 @@ class MyViewModel : ViewModel() {
     var friendships by mutableStateOf<List<Friendship>>(emptyList())
         private set
 
+    var statuses by mutableStateOf<List<Status>>(emptyList())
+        private set
+    //
+    var userId = 1
+
     fun fetchDatabase() {
         viewModelScope.launch {
             try {
                 val userRes = supabase.from("users").select().decodeList<User>()
                 val friendshipRes = supabase.from("friendship").select().decodeList<Friendship>()
+                val statusRes = supabase.from("statuses").select().decodeList<Status>()
                 users = userRes
                 friendships = friendshipRes
+                statuses = statusRes
+
 
                 Log.d("SupabaseConnection", "Friendships fetched: $friendships")
                 Log.d("SupabaseConnection", "Users fetched: $users")
+                Log.d("SupabaseConnection", "Statuses \uD83D\uDCAA fetched: $statuses")
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
             }
