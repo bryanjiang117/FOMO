@@ -8,8 +8,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.PopupProperties
 import cafe.adriel.voyager.core.screen.Screen
@@ -29,6 +31,14 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
         .padding(16.dp),
       verticalArrangement = Arrangement.Top
     ) {
+      Text(text = "My Profile",
+        fontSize = 24.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(top = 64.dp))
+
+
+      Spacer(modifier = Modifier.height(16.dp))
+
       // Row to display the current name and the "Change" button on the same line
       Row(
         verticalAlignment = Alignment.CenterVertically,

@@ -10,6 +10,7 @@ import com.example.fomo.BuildConfig
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
 
 class MyViewModel : ViewModel() {
@@ -33,6 +34,9 @@ class MyViewModel : ViewModel() {
     //
     var userId = 2L
 
+    var displayName by mutableStateOf("Kevin Yang") // Initial display name
+
+
     fun fetchDatabase() {
         viewModelScope.launch {
             try {
@@ -41,6 +45,14 @@ class MyViewModel : ViewModel() {
                     .select()
                     .decodeList<Friendship>()
                 val statusRes = supabase.from("statuses").select().decodeList<Status>()
+
+                val me = supabase.from("users").select {
+                    filter {
+                        eq("id", 2)
+                    }
+                }.decodeSingle<User>()
+
+                displayName = me.displayName
 
                 val tempFriends = mutableListOf<User>()
                 for (friendship in friendshipRes) {
@@ -82,13 +94,31 @@ class MyViewModel : ViewModel() {
         }
     }
 
-    var displayName by mutableStateOf("Kevin Yang") // Initial display name
+    fun updateDisplayName(newDisplayName: String){
+        viewModelScope.launch {
+            try {
+               supabase.from("users").update({
+                   set("display_name", newDisplayName)
+               }){
+                   filter {
+                       eq("id", 2)
+                   }
+               }
+
+                displayName = newDisplayName
+            } catch (e: Exception) {
+                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+            }
+        }
+    }
+
+
 
     var activity by mutableStateOf(ActivityModel("Idle", "\uD83D\uDCA4")) // Initial display status
 
-    fun updateDisplayName(newName: String) {
-        displayName = newName
-    }
+//    fun updateDisplayName(newName: String) {
+//        displayName = newName
+//    }
 
     fun updateActivity(newActivity: ActivityModel) {
         activity = newActivity
