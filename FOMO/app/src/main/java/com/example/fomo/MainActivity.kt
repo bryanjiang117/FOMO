@@ -15,6 +15,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -56,37 +57,28 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import com.example.fomo.models.MapViewModel
 import com.example.fomo.models.MyViewModel
+import com.example.fomo.models.User
 import com.example.fomo.ui.theme.FOMOTheme
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
 
-val supabase = createSupabaseClient(
-  supabaseUrl = "https://vwapghztewutqqmzaoib.supabase.co",
-  supabaseKey = "${BuildConfig.SUPABASE_KEY}"
-) {
-  install(Postgrest)
-}
 class MainActivity : ComponentActivity() {
-  @RequiresApi(Build.VERSION_CODES.Q)
+  private val myViewModel: MyViewModel by viewModels()
 
+  @RequiresApi(Build.VERSION_CODES.Q)
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
 
     lifecycleScope.launch {
-      try {
-        val response = supabase.postgrest["users"].select()
-        Log.d("SupabaseConnection", "Database connected: $response")
-      } catch (e: Exception) {
-        Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
-      }
+      myViewModel.fetchDatabase()
     }
-
 
     val fineLocationGranted =
         ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==

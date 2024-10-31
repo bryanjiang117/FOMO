@@ -54,6 +54,7 @@ dependencies {
   implementation(platform("io.github.jan-tennert.supabase:bom:3.0.1"))
   implementation("io.github.jan-tennert.supabase:postgrest-kt")
   implementation("io.ktor:ktor-client-android:3.0.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -72,6 +73,8 @@ dependencies {
   implementation(libs.google.maps.compose)
   implementation(libs.google.maps.compose.utils)
   implementation(libs.google.maps.compose.widgets)
+  implementation(libs.android.maps.utils)
+  implementation(libs.firebase.firestore.ktx)
 
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)

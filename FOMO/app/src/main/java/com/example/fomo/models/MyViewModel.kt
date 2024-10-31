@@ -1,11 +1,58 @@
 package com.example.fomo.models
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewModelScope
+import com.example.fomo.BuildConfig
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.from
+import kotlinx.coroutines.launch
 
 class MyViewModel : ViewModel() {
+
+
+    val supabase = createSupabaseClient(
+        supabaseUrl = "https://vwapghztewutqqmzaoib.supabase.co",
+        supabaseKey = BuildConfig.SUPABASE_KEY
+    ) {
+        install(Postgrest)
+    }
+    // State to hold the list of users
+    var users by mutableStateOf<List<User>>(emptyList())
+        private set
+
+    // State to hold the list of friendships
+    var friendships by mutableStateOf<List<Friendship>>(emptyList())
+        private set
+
+    var statuses by mutableStateOf<List<Status>>(emptyList())
+        private set
+    //
+    var userId = 1
+
+    fun fetchDatabase() {
+        viewModelScope.launch {
+            try {
+                val userRes = supabase.from("users").select().decodeList<User>()
+                val friendshipRes = supabase.from("friendship").select().decodeList<Friendship>()
+                val statusRes = supabase.from("statuses").select().decodeList<Status>()
+                users = userRes
+                friendships = friendshipRes
+                statuses = statusRes
+
+
+                Log.d("SupabaseConnection", "Friendships fetched: $friendships")
+                Log.d("SupabaseConnection", "Users fetched: $users")
+                Log.d("SupabaseConnection", "Statuses \uD83D\uDCAA fetched: $statuses")
+            } catch (e: Exception) {
+                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+            }
+        }
+    }
 
     var displayName by mutableStateOf("Kevin Yang") // Initial display name
 
