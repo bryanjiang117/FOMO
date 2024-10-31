@@ -57,6 +57,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import com.example.fomo.models.MapViewModel
 import com.example.fomo.models.MyViewModel
+import com.example.fomo.models.User
 import com.example.fomo.const.Colors
 import com.example.fomo.ui.theme.FOMOTheme
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -72,150 +73,28 @@ class MainActivity : ComponentActivity() {
 
   @RequiresApi(Build.VERSION_CODES.Q)
 
-
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-
-
     lifecycleScope.launch {
       myViewModel.fetchDatabase()
     }
 
-
-    val fineLocationGranted =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
-
-    val coarseLocationGranted =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
-
-    val backgroundLocationGranted =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
-
-    val locationPermissionsAlreadyGranted = fineLocationGranted && coarseLocationGranted
+    val backgroundLocationGranted = LocationHelper.isBackgroundLocationPermissionGranted(this)
+    val locationPermissionsAlreadyGranted = LocationHelper.areLocationPermissionsGranted(this)
 
     enableEdgeToEdge()
     setContent {
       val myViewModel: MyViewModel = viewModel()
       val mapViewModel: MapViewModel = viewModel()
+
       FOMOTheme {
-        LocationChecker(
-            foregroundPermissionsGranted = locationPermissionsAlreadyGranted,
-            backgroundPermissionGranted = backgroundLocationGranted,
-            mapViewModel = mapViewModel)
+        LocationHelper.LocationChecker(locationPermissionsAlreadyGranted, backgroundLocationGranted,mapViewModel,this)
         NavigatorFun(myViewModel = myViewModel, mapViewModel = mapViewModel)
       }
     }
   }
 }
 
-@Composable
-fun LocationChecker(
-    foregroundPermissionsGranted: Boolean,
-    backgroundPermissionGranted: Boolean,
-    mapViewModel: MapViewModel
-) {
-  val context = LocalContext.current
-
-  val locationPermissions =
-      mutableListOf(
-          Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-
-  var requestBackgroundPermission by remember { mutableStateOf(false) }
-
-  val locationPermissionLauncher =
-      rememberLauncherForActivityResult(
-          contract = ActivityResultContracts.RequestMultiplePermissions(),
-          onResult = { permissions: Map<String, Boolean> ->
-            permissions.forEach { (permission, isGranted) ->
-              println("Permission: $permission is granted: $isGranted")
-            }
-            val foregroundGranted =
-                permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true &&
-                    permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-
-            if (foregroundGranted &&
-                !backgroundPermissionGranted &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-              requestBackgroundPermission = true
-            }
-          })
-
-  LaunchedEffect(Unit) {
-    if (!foregroundPermissionsGranted) {
-      try {
-        locationPermissionLauncher.launch(locationPermissions.toTypedArray())
-      } catch (e: Exception) {
-        println("Error requesting permissions")
-        e.printStackTrace()
-      }
-    } else if (!backgroundPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      requestBackgroundPermission = true
-    } else {
-      getPreciseLocation(context, mapViewModel)
-    }
-  }
-
-  // Trigger the background location permission request in a proper composable context
-  if (requestBackgroundPermission) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      RequestBackgroundLocationPermission()
-      getPreciseLocation(context, mapViewModel)
-    }
-  }
-}
-
-@SuppressLint("MissingPermission")
-fun getPreciseLocation(context: Context, viewState: MapViewModel) {
-  val fusedLocationClient: FusedLocationProviderClient =
-      LocationServices.getFusedLocationProviderClient(context)
-  fusedLocationClient.lastLocation
-      .addOnSuccessListener { location: Location? ->
-        if (location != null) {
-          val latitude = location.latitude
-          val longitude = location.longitude
-
-          viewState.updateUserLocation(latitude, longitude)
-        } else {
-          Log.d("PreciseLocation", "Location is null, unable to retrieve location.")
-          println("Location is null, unable to retrieve location.")
-        }
-      }
-      .addOnFailureListener { exception ->
-        Log.e("PreciseLocation", "Failed to get location: ${exception.message}")
-        println("Failed to get location: ${exception.message}")
-      }
-}
-
-@RequiresApi(Build.VERSION_CODES.Q)
-@Composable
-fun RequestBackgroundLocationPermission() {
-  var launcherInitialized by remember { mutableStateOf(false) }
-
-  val backgroundPermissionLauncher =
-      rememberLauncherForActivityResult(
-          contract = ActivityResultContracts.RequestPermission(),
-          onResult = { isGranted: Boolean ->
-            if (isGranted) {
-              println("Background location permission was granted")
-            } else {
-              println("Background location permission was denied")
-            }
-          })
-
-  LaunchedEffect(Unit) { launcherInitialized = true }
-
-  // Correct usage for a single permission request
-  if (launcherInitialized) {
-    try {
-      backgroundPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-    } catch (e: Exception) {
-      e.printStackTrace()
-    }
-  }
-}
 
 @Composable
 fun NavigatorFun(myViewModel: MyViewModel, mapViewModel: MapViewModel) {
