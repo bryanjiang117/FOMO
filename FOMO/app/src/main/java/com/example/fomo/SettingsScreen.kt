@@ -27,6 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.provider.Settings
 import android.net.Uri
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
 
 
@@ -43,19 +47,26 @@ class SettingsScreen : Screen {
 
 
     Column(
-      modifier = Modifier.fillMaxSize(),
-      verticalArrangement = Arrangement.Center,
-      horizontalAlignment = Alignment.CenterHorizontally
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp),
+      verticalArrangement = Arrangement.Top
     ) {
-      Text("Settings")
+      Text(text = "Settings",
+        fontSize = 24.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(top = 64.dp))
+
 
       Spacer(modifier = Modifier.height(16.dp))
 
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        modifier = Modifier.fillMaxWidth()
       ) {
-        Text("Location Sharing")
+        Text(text = "Location Sharing"          ,
+          modifier = Modifier.weight(1f) // Push the text to the left
+        )
 
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -71,9 +82,11 @@ class SettingsScreen : Screen {
 
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        modifier = Modifier.fillMaxWidth()
       ) {
-        Text("Notification Sharing")
+        Text(text = "Notification Sharing",
+          modifier = Modifier.weight(1f) // Push the text to the left
+        )
 
         Spacer(modifier = Modifier.width(8.dp))
 
