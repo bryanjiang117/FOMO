@@ -56,6 +56,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import com.example.fomo.models.MapViewModel
 import com.example.fomo.models.MyViewModel
+import com.example.fomo.const.Colors
 import com.example.fomo.ui.theme.FOMOTheme
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -263,15 +264,15 @@ fun Navbar(viewModel: MyViewModel, mapViewModel: MapViewModel) {
           modifier = Modifier.weight(1f),
           shape = RectangleShape,
           contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA0D683))) {
+          colors = ButtonDefaults.buttonColors(containerColor = Colors.primary)) {
             Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Map Icon")
           }
       Button(
-          onClick = { navigator?.push(FriendsScreen()) },
+          onClick = { navigator?.push(FriendsScreen(viewModel)) },
           modifier = Modifier.weight(1f),
           shape = RectangleShape,
           contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA0D683))) {
+          colors = ButtonDefaults.buttonColors(containerColor = Colors.primary)) {
             Icon(imageVector = Icons.Default.People, contentDescription = "Friends Icon")
           }
       Button(
@@ -279,7 +280,7 @@ fun Navbar(viewModel: MyViewModel, mapViewModel: MapViewModel) {
           modifier = Modifier.weight(1f),
           shape = RectangleShape,
           contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA0D683))) {
+          colors = ButtonDefaults.buttonColors(containerColor = Colors.primary)) {
             Icon(imageVector = Icons.Default.Person, contentDescription = "Profile Icon")
           }
       Button(
@@ -287,7 +288,7 @@ fun Navbar(viewModel: MyViewModel, mapViewModel: MapViewModel) {
           modifier = Modifier.weight(1f),
           shape = RectangleShape,
           contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA0D683))) {
+          colors = ButtonDefaults.buttonColors(containerColor = Colors.primary)) {
             Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings Icon")
           }
     }
