@@ -37,6 +37,7 @@ class MapScreen(private val myViewModel: MyViewModel, private val mapViewModel: 
 @Composable
 fun Map(mapViewModel: MapViewModel, myViewModel: MyViewModel) {
   var isMapLoaded by remember { mutableStateOf(false) }
+  var friendList = myViewModel.friendsList
 
   // Camera position state, initialized with a default value
   val cameraPositionState = rememberCameraPositionState {
@@ -64,12 +65,28 @@ fun Map(mapViewModel: MapViewModel, myViewModel: MyViewModel) {
     ) {
       if (isMapLoaded) {
         val homePosition = LatLng(mapViewModel.userLatitude, mapViewModel.userLongitude)  // Create LatLng object
+        Log.d("Home Position", homePosition.toString())
 
         Marker(
           state = rememberMarkerState(key = "Home", homePosition),
           title = "Your Location",
           snippet = "${myViewModel.activity.emoji} ${myViewModel.activity.name}",
         )
+
+        for(friend in friendList) {
+          val friendLocation = LatLng(friend.latitude, friend.longitude)
+          val markerState = rememberMarkerState(
+            key = "friend" + friend.id.toString(),
+            position = friendLocation
+          ).apply {
+            showInfoWindow() // This ensures the info window is displayed when the marker is rendered
+          }
+          Marker(
+            state = markerState,
+            title = friend.displayName,
+            snippet = "${myViewModel.activity.emoji} ${myViewModel.activity.name}",
+          )
+        }
       }
     }
 

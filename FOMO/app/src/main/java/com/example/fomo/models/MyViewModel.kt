@@ -26,26 +26,54 @@ class MyViewModel : ViewModel() {
         private set
 
     // State to hold the list of friendships
-    var friendships by mutableStateOf<List<Friendship>>(emptyList())
-        private set
+    var friendsList by mutableStateOf<List<User>>(emptyList())
 
     var statuses by mutableStateOf<List<Status>>(emptyList())
         private set
     //
-    var userId = 1
+    var userId = 2L
 
     fun fetchDatabase() {
         viewModelScope.launch {
             try {
-                val userRes = supabase.from("users").select().decodeList<User>()
-                val friendshipRes = supabase.from("friendship").select().decodeList<Friendship>()
+                val userRes = supabase.from("users")
+                val friendshipRes = supabase.from("friendship")
+                    .select()
+                    .decodeList<Friendship>()
                 val statusRes = supabase.from("statuses").select().decodeList<Status>()
-                users = userRes
-                friendships = friendshipRes
+
+                val tempFriends = mutableListOf<User>()
+                for (friendship in friendshipRes) {
+                    if (friendship.accepted) {
+                        if (friendship.receiverId == userId) {
+                            // Add requesterId if receiverId is 2
+                            val friendId = friendship.requesterId
+                            val tempFriend = userRes
+                                .select() {
+                                    filter {
+                                        eq("id", friendId)
+                                    }
+                                }.decodeSingle<User>()
+                            tempFriends.add(tempFriend)
+                        } else if (friendship.requesterId == userId) {
+                            // Add receiverId if requesterId is 2
+                            val friendId = friendship.receiverId
+                            val tempFriend = userRes
+                                .select() {
+                                    filter {
+                                        eq("id", friendId)
+                                    }
+                                }.decodeSingle<User>()
+                            tempFriends.add(tempFriend)
+                        }
+                    }
+                }
+                friendsList = tempFriends
+                users = userRes.select().decodeList<User>()
                 statuses = statusRes
 
 
-                Log.d("SupabaseConnection", "Friendships fetched: $friendships")
+                Log.d("SupabaseConnection", "Friends fetched: $friendsList")
                 Log.d("SupabaseConnection", "Users fetched: $users")
                 Log.d("SupabaseConnection", "Statuses \uD83D\uDCAA fetched: $statuses")
             } catch (e: Exception) {
@@ -68,3 +96,5 @@ class MyViewModel : ViewModel() {
 
 
 }
+
+
