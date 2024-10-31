@@ -15,6 +15,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -62,16 +63,13 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
 
-val supabase = createSupabaseClient(
-  supabaseUrl = "https://vwapghztewutqqmzaoib.supabase.co",
-  supabaseKey = "${BuildConfig.SUPABASE_KEY}"
-) {
-  install(Postgrest)
-}
 class MainActivity : ComponentActivity() {
+  private val myViewModel: MyViewModel by viewModels()
+
   @RequiresApi(Build.VERSION_CODES.Q)
 
 
@@ -80,12 +78,7 @@ class MainActivity : ComponentActivity() {
 
 
     lifecycleScope.launch {
-      try {
-        val response = supabase.postgrest["users"].select()
-        Log.d("SupabaseConnection", "Database connected: $response")
-      } catch (e: Exception) {
-        Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
-      }
+      myViewModel.fetchDatabase()
     }
 
 
@@ -288,7 +281,7 @@ fun Navbar(viewModel: MyViewModel, mapViewModel: MapViewModel) {
           modifier = Modifier.weight(1f),
           shape = RectangleShape,
           contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = Colors.primary)) {
+          colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA0D683))) {
             Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings Icon")
           }
     }

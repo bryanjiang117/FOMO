@@ -35,8 +35,10 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
   @Composable
   override fun Content() {
     Column(
-      modifier = Modifier.fillMaxSize(),
-      verticalArrangement = Arrangement.spacedBy(10.dp),
+      verticalArrangement = Arrangement.spacedBy(24.dp),
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)
     ) {
       Header()
       Nav()
@@ -68,15 +70,16 @@ val navCardTitles = arrayOf(
 @Composable
 fun Nav(){
   Row(
-    horizontalArrangement = Arrangement.spacedBy(10.dp)
+    horizontalArrangement = Arrangement.spacedBy(16.dp),
   ) {
     for(title in navCardTitles) {
       Card(
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Colors.primary),
       ) {
         Text(
-          text = title
+          text = title,
+          modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
       }
     }
@@ -92,9 +95,13 @@ fun FriendsList(myViewModel: MyViewModel) {
     Friend(id=225, name="Daniel2", status=2, online=true),
   )) }
 
-  Column {
+  Column(
+    verticalArrangement = Arrangement.spacedBy(16.dp)
+  ) {
     for(friend in friends) {
-      Row {
+      Row(
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+      ) {
         Image(
           painter = painterResource(id = R.drawable.placeholder_pfp),
           contentDescription = "Profile Picture",
@@ -103,15 +110,17 @@ fun FriendsList(myViewModel: MyViewModel) {
             .size(75.dp) // Set size as needed
             .clip(CircleShape)
         )
-        Column {
+        Column(
+          verticalArrangement = Arrangement.SpaceAround
+        ) {
           Text(
             text = friend.name,
-            fontSize = 10.sp,
+            fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
           )
           Text(
             text = activities[friend.status].name,
-            fontSize = 10.sp,
+            fontSize = 16.sp,
           )
         }
       }

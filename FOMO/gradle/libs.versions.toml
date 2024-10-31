@@ -15,6 +15,8 @@ playServicesMaps = "19.0.0"
 googleMapsCompose = "4.4.1"
 playServicesLocation = "21.3.0"
 material-icons = "1.7.4"
+android-maps-utils = "2.2.3"
+firebaseFirestoreKtx = "25.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,6 +43,8 @@ google-maps-compose-utils = { group = "com.google.maps.android", name = "maps-co
 google-maps-compose-widgets = { group = "com.google.maps.android", name = "maps-compose-widgets", version.ref = "googleMapsCompose" }
 material-icons-core = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "material-icons"}
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "material-icons"}
+android-maps-utils = {group = "com.google.maps.android", name = "android-maps-utils", version.ref= "android-maps-utils"}
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
