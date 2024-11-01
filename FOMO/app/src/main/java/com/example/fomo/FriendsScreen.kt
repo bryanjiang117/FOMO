@@ -43,6 +43,7 @@ import androidx.compose.material.ripple.rememberRipple
 import com.example.fomo.const.Colors
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.ui.Alignment
 import com.example.fomo.models.User
 
 
@@ -134,6 +135,7 @@ fun FriendsList(myViewModel: MyViewModel) {
       val friendLocation = LatLng(friend.latitude, friend.longitude)
       val distance = myViewModel.calculateDistance(friendLocation, myLocation)
       val friendStatus = myViewModel.statusList.filter {it.id == friend.status_id}[0]
+      var distanceText = if (distance > 1000)  "${distance.toInt() / 1000.0}km away" else "${distance.toInt()}m away"
 
       Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -157,9 +159,13 @@ fun FriendsList(myViewModel: MyViewModel) {
             fontWeight = FontWeight.SemiBold,
           )
           Text(
-            text = "${distance.toInt()}m away",
+            text = distanceText,
             fontSize = 16.sp,
             fontWeight = FontWeight.Light,
+          )
+          Text(
+            text = "${friendStatus.emoji} ${friendStatus.description}",
+            fontSize = 16.sp,
           )
           Text(
             text = "${friendStatus.emoji} ${friendStatus.description}",
@@ -175,26 +181,35 @@ fun FriendsList(myViewModel: MyViewModel) {
 fun AddFriends(myViewModel: MyViewModel) {
   var text by remember { mutableStateOf("") }
 
+  Row(
+    verticalAlignment = Alignment.CenterVertically,
+    modifier = Modifier.fillMaxWidth()
+  ) {
+    OutlinedTextField(
+      value = text,
+      onValueChange = { text = it },
+      label = { Text("Add Friend") },
+      placeholder = { Text("Enter your friend's username") },
+      singleLine = true,
+      keyboardOptions = KeyboardOptions(
+        keyboardType = KeyboardType.Text,
+        imeAction = ImeAction.Done
+      ),
+      shape = RoundedCornerShape(16.dp),
+      modifier = Modifier
+        .weight(1f)
+        .padding(end = 2.dp)
+    )
 
-  OutlinedTextField(
-    value = text,
-    onValueChange = { text = it },
-    label = { Text("Add Friend") },
-    placeholder = { Text("Enter your friend's username") },
-    singleLine = true,
-    keyboardOptions = KeyboardOptions(
-      keyboardType = KeyboardType.Text,
-      imeAction = ImeAction.Done
-    ),
-    keyboardActions = KeyboardActions (
-      onDone = {
+    TextButton(
+      onClick = {
         myViewModel.createRequest(text)
       }
-    ),
-    shape = RoundedCornerShape(16.dp),
-    modifier = Modifier
-      .fillMaxWidth()
-  )
+    ) {
+      Text("Add", color = MaterialTheme.colorScheme.primary, fontSize=18.sp)
+    }
+  }
+
 }
 
 @Composable
@@ -234,11 +249,11 @@ fun Requests(myViewModel: MyViewModel) {
         // puts space between name and check to push check to far right
         Spacer(modifier = Modifier.weight(1f))
 
-        Column(
-          verticalArrangement = Arrangement.SpaceEvenly,
+        Row(
+          horizontalArrangement = Arrangement.SpaceEvenly,
           modifier = Modifier
             .fillMaxHeight()
-            .padding(16.dp)
+            .padding(24.dp)
         ) {
           Icon(
             imageVector = Icons.Default.Check, contentDescription = "Check Icon",

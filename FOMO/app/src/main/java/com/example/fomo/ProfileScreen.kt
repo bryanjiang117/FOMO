@@ -49,7 +49,7 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
         modifier = Modifier.fillMaxWidth()
-        ){
+      ){
         Image(
           painter = painterResource(id = R.drawable.placeholder_pfp),
           contentDescription = "Profile Picture",
@@ -187,9 +187,10 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
               DropdownMenuItem(
                 text = { Text(text = "${activity.emoji} ${activity.description}") },
                 onClick = {
-                myViewModel.updateStatus(activity)
-                droppedDown = false
-              })
+                  myViewModel.updateStatus(activity)
+                  droppedDown = false
+
+                })
             }
           }
         }
@@ -239,6 +240,7 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
                     myViewModel.updatePassword(newValue)
                   }
                   showDialog = false
+                  newValue = ""
                 }) {
                   Text("Save")
                 }
