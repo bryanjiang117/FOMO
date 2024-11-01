@@ -78,7 +78,7 @@ fun Map(mapViewModel: MapViewModel, myViewModel: MyViewModel) {
 
         Marker(
           state = rememberMarkerState(key = "Home", homePosition),
-          title = "Your Location",
+          title = myViewModel.displayName,
           snippet = "${myViewModel.activity.emoji} ${myViewModel.activity.name}",
         )
 
