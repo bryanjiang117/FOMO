@@ -32,9 +32,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
+import com.example.fomo.models.MyViewModel
 
 
-class SettingsScreen : Screen {
+class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
   @Composable
   override fun Content() {
     val context = LocalContext.current
@@ -101,6 +102,64 @@ class SettingsScreen : Screen {
         )
       }
 
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Text(text = "Friend's Status Update",
+          modifier = Modifier.weight(1f) // Push the text to the left
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Friend's Status Update notification toggle switch
+        Switch(
+          checked = myViewModel.notiStatus,
+          onCheckedChange = { isEnabled ->
+            myViewModel.updateNotiStatus(isEnabled)
+
+          }
+        )
+      }
+
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Text(text = "Nearby Friends",
+          modifier = Modifier.weight(1f) // Push the text to the left
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Nearby Friends notification toggle switch
+        Switch(
+          checked = myViewModel.notiNearby,
+          onCheckedChange = { isEnabled ->
+            myViewModel.updateNotiNearby(isEnabled)
+
+          }
+        )
+      }
+
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Text(text = "Messages",
+          modifier = Modifier.weight(1f) // Push the text to the left
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Messages notification toggle switch
+        Switch(
+          checked = myViewModel.notiMessages,
+          onCheckedChange = { isEnabled ->
+            myViewModel.updateNotiMessages(isEnabled)
+          }
+        )
+      }
     }
 
   }

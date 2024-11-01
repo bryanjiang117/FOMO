@@ -55,7 +55,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
-import com.example.fomo.models.MapViewModel
 import com.example.fomo.models.MyViewModel
 import com.example.fomo.models.User
 import com.example.fomo.const.Colors
@@ -85,11 +84,10 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     setContent {
       val myViewModel: MyViewModel = viewModel()
-      val mapViewModel: MapViewModel = viewModel()
 
       FOMOTheme {
-        LocationHelper.LocationChecker(locationPermissionsAlreadyGranted, backgroundLocationGranted,mapViewModel,this)
-        NavigatorFun(myViewModel = myViewModel, mapViewModel = mapViewModel)
+        LocationHelper.LocationChecker(locationPermissionsAlreadyGranted, backgroundLocationGranted, myViewModel,this)
+        NavigatorFun(myViewModel = myViewModel)
       }
     }
   }
@@ -97,16 +95,16 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun NavigatorFun(myViewModel: MyViewModel, mapViewModel: MapViewModel) {
-  Navigator(MapScreen(myViewModel, mapViewModel)) { Content(myViewModel, mapViewModel) }
+fun NavigatorFun(myViewModel: MyViewModel) {
+  Navigator(MapScreen(myViewModel)) { Content(myViewModel) }
 }
 
 @Composable
-fun Content(myViewModel: MyViewModel, mapViewModel: MapViewModel) {
+fun Content(myViewModel: MyViewModel) {
 
   Scaffold(
       modifier = Modifier.fillMaxSize(),
-      bottomBar = { Navbar(viewModel = myViewModel, mapViewModel = mapViewModel) }) { innerPadding
+      bottomBar = { Navbar(viewModel = myViewModel) }) { innerPadding
         ->
         // Pass the innerPadding as a modifier to the Content
         Column(
@@ -125,14 +123,14 @@ fun State(state: String, modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Navbar(viewModel: MyViewModel, mapViewModel: MapViewModel) {
+fun Navbar(viewModel: MyViewModel) {
   val navigator = LocalNavigator.current
   CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
     Row(
         modifier = Modifier.fillMaxWidth(),
     ) {
       Button(
-          onClick = { navigator?.push(MapScreen(viewModel, mapViewModel)) },
+          onClick = { navigator?.push(MapScreen(viewModel)) },
           modifier = Modifier.weight(1f),
           shape = RectangleShape,
           contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
@@ -140,7 +138,7 @@ fun Navbar(viewModel: MyViewModel, mapViewModel: MapViewModel) {
             Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Map Icon")
           }
       Button(
-          onClick = { navigator?.push(FriendsScreen(viewModel, mapViewModel)) },
+          onClick = { navigator?.push(FriendsScreen(viewModel)) },
           modifier = Modifier.weight(1f),
           shape = RectangleShape,
           contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
@@ -156,7 +154,7 @@ fun Navbar(viewModel: MyViewModel, mapViewModel: MapViewModel) {
             Icon(imageVector = Icons.Default.Person, contentDescription = "Profile Icon")
           }
       Button(
-          onClick = { navigator?.push(SettingsScreen()) },
+          onClick = { navigator?.push(SettingsScreen(viewModel)) },
           modifier = Modifier.weight(1f),
           shape = RectangleShape,
           contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
