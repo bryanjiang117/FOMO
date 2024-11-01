@@ -18,7 +18,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.*
@@ -33,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import cafe.adriel.voyager.core.screen.Screen
 import android.util.Log
-import com.example.fomo.models.MapViewModel
 import com.example.fomo.models.MyViewModel
 import com.google.android.gms.maps.model.LatLng
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,15 +40,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.ripple.rememberRipple
-import androidx.compose.runtime.mutableStateOf
-import com.example.fomo.const.Friend
-import com.example.fomo.const.activities
 import com.example.fomo.const.Colors
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Close
+import com.example.fomo.models.User
 
 
-class FriendsScreen(private val myViewModel: MyViewModel, private val mapViewModel: MapViewModel) : Screen {
+class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
   @Composable
   override fun Content() {
     var selectedTab by remember { mutableStateOf(0)}
@@ -68,9 +64,9 @@ class FriendsScreen(private val myViewModel: MyViewModel, private val mapViewMod
       Header()
       Nav(selectedTab, ::onSelectTab)
       when (selectedTab) {
-        0 -> FriendsList(myViewModel, mapViewModel)
-        1 -> AddFriends()
-        2 -> Requests()
+        0 -> FriendsList(myViewModel)
+        1 -> AddFriends(myViewModel)
+        2 -> Requests(myViewModel)
       }
     }
   }
@@ -126,17 +122,18 @@ fun Nav(selectedTab: Int, onSelectTab: (Int) -> Unit){
 }
 
 @Composable
-fun FriendsList(myViewModel: MyViewModel, mapViewModel: MapViewModel) {
+fun FriendsList(myViewModel: MyViewModel) {
   var isLoaded by remember { mutableStateOf(false) }
   val friends = myViewModel.friendsList
-  val myLocation = mapViewModel.center
+  val myLocation = myViewModel.center
 
   Column(
     verticalArrangement = Arrangement.spacedBy(16.dp)
   ) {
     for(friend in friends) {
       val friendLocation = LatLng(friend.latitude, friend.longitude)
-      val distance = mapViewModel.calculateDistance(friendLocation, myLocation)
+      val distance = myViewModel.calculateDistance(friendLocation, myLocation)
+      val friendStatus = myViewModel.statusList.filter {it.id == friend.status_id}[0]
 
       Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -165,7 +162,7 @@ fun FriendsList(myViewModel: MyViewModel, mapViewModel: MapViewModel) {
             fontWeight = FontWeight.Light,
           )
           Text(
-            text = "${activities[friend.status].name} ${activities[friend.status].emoji}",
+            text = "${friendStatus.emoji} ${friendStatus.description}",
             fontSize = 16.sp,
           )
         }
@@ -175,18 +172,15 @@ fun FriendsList(myViewModel: MyViewModel, mapViewModel: MapViewModel) {
 }
 
 @Composable
-fun AddFriends() {
+fun AddFriends(myViewModel: MyViewModel) {
   var text by remember { mutableStateOf("") }
 
-  fun onSubmitFriendRequest() {
-    Log.d("Add friends tab", "submitted ${text}")
-  }
 
   OutlinedTextField(
     value = text,
     onValueChange = { text = it },
     label = { Text("Add Friend") },
-    placeholder = { Text("Enter your friend's email") },
+    placeholder = { Text("Enter your friend's username") },
     singleLine = true,
     keyboardOptions = KeyboardOptions(
       keyboardType = KeyboardType.Text,
@@ -194,7 +188,7 @@ fun AddFriends() {
     ),
     keyboardActions = KeyboardActions (
       onDone = {
-        onSubmitFriendRequest()
+        myViewModel.createRequest(text)
       }
     ),
     shape = RoundedCornerShape(16.dp),
@@ -204,15 +198,9 @@ fun AddFriends() {
 }
 
 @Composable
-fun Requests() {
-  var requests by remember { mutableStateOf(arrayOf(
-    Friend(id=3, name="Bobliu"),
-    Friend(id=1000, name="Chantal"),
-  )) }
+fun Requests(myViewModel: MyViewModel) {
+  var requests by remember { mutableStateOf<List<User>>(myViewModel.requestList) }
 
-  fun acceptRequest(request: Friend) {
-
-  }
 
   Column(
     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -237,7 +225,7 @@ fun Requests() {
           modifier = Modifier.fillMaxHeight()
         ) {
           Text(
-            text = request.name,
+            text = request.username ?: "",
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
           )
@@ -256,7 +244,15 @@ fun Requests() {
             imageVector = Icons.Default.Check, contentDescription = "Check Icon",
             modifier = Modifier.clickable (
               onClick = {
-                acceptRequest(request)
+                myViewModel.acceptRequest(request.id ?: -1, myViewModel.id)
+              }
+            )
+          )
+          Icon(
+            imageVector = Icons.Default.Close, contentDescription = "X Icon",
+            modifier = Modifier.clickable (
+              onClick = {
+                myViewModel.declineRequest(request.id ?: -1, myViewModel.id)
               }
             )
           )

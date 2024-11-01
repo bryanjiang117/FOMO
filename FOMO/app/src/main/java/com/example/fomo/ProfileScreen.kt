@@ -21,15 +21,15 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.PopupProperties
 import cafe.adriel.voyager.core.screen.Screen
-import com.example.fomo.const.activities
 import com.example.fomo.models.MyViewModel
 
 class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
   @Composable
   override fun Content() {
     var showDialog by remember { mutableStateOf(false) }  // popup state
+    var toChange by remember { mutableStateOf("null") } // what to change
     var droppedDown by remember { mutableStateOf(false) } // display dropdown
-    var newDisplayName by remember { mutableStateOf("") } // updated name state
+    var newValue by remember { mutableStateOf("") } // updated name state
 
     Column(
       modifier = Modifier
@@ -75,7 +75,73 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
         )
 
         TextButton(
-          onClick = { showDialog = true }
+          onClick = {
+            showDialog = true
+            toChange = "Display Name"
+          }
+        ) {
+          Text("Change", color = MaterialTheme.colorScheme.primary)
+        }
+      }
+
+      // Row to display the current name and the "Change" button on the same line
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Text(
+          text = "Email: ${myViewModel.email}",
+          style = MaterialTheme.typography.bodyMedium,
+          modifier = Modifier.weight(1f) // Push the text to the left
+        )
+
+        TextButton(
+          onClick = {
+            showDialog = true
+            toChange = "Email"
+          }
+        ) {
+          Text("Change", color = MaterialTheme.colorScheme.primary)
+        }
+      }
+
+      // Row to display the current name and the "Change" button on the same line
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Text(
+          text = "Username: ${myViewModel.username}",
+          style = MaterialTheme.typography.bodyMedium,
+          modifier = Modifier.weight(1f) // Push the text to the left
+        )
+
+        TextButton(
+          onClick = {
+            showDialog = true
+            toChange = "Username"
+          }
+        ) {
+          Text("Change", color = MaterialTheme.colorScheme.primary)
+        }
+      }
+
+      // Row to display the current name and the "Change" button on the same line
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Text(
+          text = "Password: ******",
+          style = MaterialTheme.typography.bodyMedium,
+          modifier = Modifier.weight(1f) // Push the text to the left
+        )
+
+        TextButton(
+          onClick = {
+            showDialog = true
+            toChange = "Password"
+          }
         ) {
           Text("Change", color = MaterialTheme.colorScheme.primary)
         }
@@ -101,7 +167,7 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
             onClick = { droppedDown = !droppedDown },
             modifier = Modifier.width(200.dp))
           {
-            Text(text = "${myViewModel.activity.emoji} ${myViewModel.activity.name}")
+            Text(text = "${myViewModel.status.emoji} ${myViewModel.status.description}")
           }
 
           // Dropdown menu items
@@ -117,11 +183,11 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
             offset = DpOffset(x = 0.dp, y = 0.dp),
             properties = PopupProperties(focusable = true)
           ) {
-            activities.forEach { activity ->
+            myViewModel.statusList.forEach { activity ->
               DropdownMenuItem(
-                text = { Text(text = "${activity.emoji} ${activity.name}") },
+                text = { Text(text = "${activity.emoji} ${activity.description}") },
                 onClick = {
-                myViewModel.updateActivity(activity)
+                myViewModel.updateStatus(activity)
                 droppedDown = false
               })
             }
@@ -141,15 +207,15 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
               modifier = Modifier.padding(16.dp),
               horizontalAlignment = Alignment.CenterHorizontally
             ) {
-              Text("Enter New Display Name")
+              Text("Enter New $toChange")
 
               Spacer(modifier = Modifier.height(8.dp))
 
               // TextField to input new display name
               OutlinedTextField(
-                value = newDisplayName,
-                onValueChange = { newDisplayName = it },
-                label = { Text("New Display Name") },
+                value = newValue,
+                onValueChange = { newValue = it },
+                label = { Text("New $toChange") },
                 modifier = Modifier.fillMaxWidth()
               )
 
@@ -163,7 +229,15 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
                   Text("Cancel")
                 }
                 TextButton(onClick = {  //save button
-                  myViewModel.updateDisplayName(newDisplayName)
+                  if ( toChange == "Display Name") {
+                    myViewModel.updateDisplayName(newValue)
+                  } else if ( toChange == "Email") {
+                    myViewModel.updateEmail(newValue)
+                  } else if ( toChange == "Username") {
+                    myViewModel.updateUsername(newValue)
+                  } else {
+                    myViewModel.updatePassword(newValue)
+                  }
                   showDialog = false
                 }) {
                   Text("Save")

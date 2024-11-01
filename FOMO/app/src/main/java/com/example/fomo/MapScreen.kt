@@ -24,7 +24,6 @@ import com.example.fomo.const.Colors
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.example.fomo.models.MapViewModel
 import com.example.fomo.models.MyViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
@@ -32,38 +31,38 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberMarkerState
 
 
-class MapScreen(private val myViewModel: MyViewModel, private val mapViewModel: MapViewModel) : Screen {
+class MapScreen(private val myViewModel: MyViewModel) : Screen {
   @Composable
   override fun Content() {
     Column(
       modifier = Modifier.fillMaxSize()
     ) {
-      Map(mapViewModel, myViewModel)
+      Map(myViewModel)
     }
   }
 }
 
 @Composable
-fun Map(mapViewModel: MapViewModel, myViewModel: MyViewModel) {
+fun Map(myViewModel: MyViewModel) {
   var isMapLoaded by remember { mutableStateOf(false) }
   var friendList = myViewModel.friendsList
 
   // Camera position state, initialized with a default value
   val cameraPositionState = rememberCameraPositionState {
-    position = CameraPosition.fromLatLngZoom(mapViewModel.center, 15f)
+    position = CameraPosition.fromLatLngZoom(myViewModel.center, 15f)
   }
 
   // Update camera position whenever mapViewModel.center changes
-  LaunchedEffect(mapViewModel.center) {
+  LaunchedEffect(myViewModel.center) {
     cameraPositionState.animate(
-      CameraUpdateFactory.newLatLngZoom(mapViewModel.center, 15f),
+      CameraUpdateFactory.newLatLngZoom(myViewModel.center, 15f),
       1000 // Optional animation duration in milliseconds
     )
   }
 
   Box(modifier = Modifier.fillMaxSize()) {
     Log.d("MapDebug", "API key is: ${BuildConfig.GOOGLE_MAPS_API_KEY}")
-    Log.d("MapDebug", "Center is: ${mapViewModel.center}")
+    Log.d("MapDebug", "Center is: ${myViewModel.center}")
 
     GoogleMap(
       modifier = Modifier.fillMaxSize(),
@@ -73,17 +72,18 @@ fun Map(mapViewModel: MapViewModel, myViewModel: MyViewModel) {
         Log.d("MapDebug", "Map loaded successfully")},
     ) {
       if (isMapLoaded) {
-        val homePosition = LatLng(mapViewModel.userLatitude, mapViewModel.userLongitude)  // Create LatLng object
+        val homePosition = LatLng(myViewModel.userLatitude, myViewModel.userLongitude)  // Create LatLng object
         Log.d("Home Position", homePosition.toString())
 
         Marker(
           state = rememberMarkerState(key = "Home", homePosition),
           title = myViewModel.displayName,
-          snippet = "${myViewModel.activity.emoji} ${myViewModel.activity.name}",
+          snippet = "${myViewModel.status.emoji} ${myViewModel.status.description}",
         )
 
         for(friend in friendList) {
           val friendLocation = LatLng(friend.latitude, friend.longitude)
+          val friendStatus = myViewModel.statusList.filter {it.id == friend.status_id}[0]
           val markerState = rememberMarkerState(
             key = "friend" + friend.id.toString(),
             position = friendLocation
@@ -93,7 +93,7 @@ fun Map(mapViewModel: MapViewModel, myViewModel: MyViewModel) {
           Marker(
             state = markerState,
             title = friend.displayName,
-            snippet = "${myViewModel.activity.emoji} ${myViewModel.activity.name}",
+            snippet = "${friendStatus.emoji} ${friendStatus.description}",
           )
         }
       }
@@ -112,7 +112,7 @@ fun Map(mapViewModel: MapViewModel, myViewModel: MyViewModel) {
         modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
       ) {
         Text(
-          text = "${myViewModel.activity.name} ${myViewModel.activity.emoji}",
+          text = "${myViewModel.status.description} ${myViewModel.status.emoji}",
           color = Color.Black,
         )
 //        Text(

@@ -16,7 +16,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
-import com.example.fomo.models.MapViewModel
+import com.example.fomo.models.MyViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 
@@ -50,7 +50,7 @@ object LocationHelper {
   fun LocationChecker(
     foregroundPermissionsGranted: Boolean,
     backgroundPermissionGranted: Boolean,
-    mapViewModel: MapViewModel,
+    mapViewModel: MyViewModel,
     context: Context
   ) {
     val locationPermissions =
@@ -101,7 +101,7 @@ object LocationHelper {
   }
 
   @SuppressLint("MissingPermission")
-  fun getPreciseLocation(context: Context, viewState: MapViewModel) {
+  fun getPreciseLocation(context: Context, viewState: MyViewModel) {
     val fusedLocationClient: FusedLocationProviderClient =
       LocationServices.getFusedLocationProviderClient(context)
     fusedLocationClient.lastLocation
