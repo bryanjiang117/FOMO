@@ -35,20 +35,20 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
       modifier = Modifier
         .fillMaxSize()
         .padding(16.dp),
-      verticalArrangement = Arrangement.Top
+      verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      Text(text = "My Profile",
-        fontSize = 24.sp,
+      Text(text = "Profile",
+        fontSize = 32.sp,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(top = 64.dp))
-
-
-      Spacer(modifier = Modifier.height(32.dp))
+        modifier = Modifier.padding(top = 16.dp)
+      )
 
       Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(16.dp)
       ){
         Image(
           painter = painterResource(id = R.drawable.placeholder_pfp),
@@ -60,8 +60,6 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
         )
 
       }
-      Spacer(modifier = Modifier.height(32.dp))
-
 
       // Row to display the current name and the "Change" button on the same line
       Row(

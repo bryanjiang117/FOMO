@@ -77,12 +77,12 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
 fun Header() {
   Row(
     modifier = Modifier
-      .padding(top = 20.dp)
+      .padding(top = 16.dp)
   ) {
     Text(
       text = "Friends",
       fontWeight = FontWeight.ExtraBold,
-      fontSize = 30.sp
+      fontSize = 32.sp
     )
   }
 }

@@ -54,9 +54,9 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
       verticalArrangement = Arrangement.Top
     ) {
       Text(text = "Settings",
-        fontSize = 24.sp,
+        fontSize = 32.sp,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(top = 64.dp))
+        modifier = Modifier.padding(top = 16.dp))
 
 
       Spacer(modifier = Modifier.height(16.dp))

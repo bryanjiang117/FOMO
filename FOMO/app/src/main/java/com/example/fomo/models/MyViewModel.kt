@@ -39,7 +39,7 @@ class MyViewModel : ViewModel() {
     var requestList by mutableStateOf<List<User>>(emptyList())
     var statusList by mutableStateOf<List<Status>>(emptyList())
     //
-    var id = 6L // sample logged in account
+    var id = 2L // sample logged in account
 
     var displayName by mutableStateOf("")
     var username by mutableStateOf("")
