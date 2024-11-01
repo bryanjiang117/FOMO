@@ -211,9 +211,13 @@ fun AddFriends(myViewModel: MyViewModel) {
     TextButton(
       onClick = {
         myViewModel.createRequest(text)
-      }
+      },
+      modifier = Modifier
+        .padding(top = 8.dp)
     ) {
-      Text("Add", color = MaterialTheme.colorScheme.primary, fontSize=18.sp)
+      Text(
+        text = "Add",
+        color = MaterialTheme.colorScheme.primary, fontSize=18.sp)
     }
   }
 
