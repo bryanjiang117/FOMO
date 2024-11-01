@@ -127,15 +127,22 @@ fun FriendsList(myViewModel: MyViewModel) {
   var isLoaded by remember { mutableStateOf(false) }
   val friends = myViewModel.friendsList
   val myLocation = myViewModel.center
+  val friendsWithDistance = mutableListOf<Pair<User, Double>>()
+
+  // Creating list of friends with distances to sort by distance
+  for(friend in friends) {
+    val friendLocation = LatLng(friend.latitude, friend.longitude)
+    val distance = myViewModel.calculateDistance(friendLocation, myLocation)
+    friendsWithDistance.add(friend to distance)
+  }
+  friendsWithDistance.sortBy{ it.second }
 
   Column(
     verticalArrangement = Arrangement.spacedBy(16.dp)
   ) {
-    for(friend in friends) {
-      val friendLocation = LatLng(friend.latitude, friend.longitude)
-      val distance = myViewModel.calculateDistance(friendLocation, myLocation)
-      val friendStatus = myViewModel.statusList.filter {it.id == friend.status_id}[0]
-      var distanceText = if (distance > 1000)  "${distance.toInt() / 1000.0}km away" else "${distance.toInt()}m away"
+    for((friend, distance) in friendsWithDistance) {
+      val friendStatus = myViewModel.statusList.filter{ it.id == friend.status_id }[0]
+      val distanceText = if (distance > 1000)  "${distance.toInt() / 1000.0}km away" else "${distance.toInt()}m away"
 
       Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
