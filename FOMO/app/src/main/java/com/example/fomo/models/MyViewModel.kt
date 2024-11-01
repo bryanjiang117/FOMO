@@ -39,7 +39,7 @@ class MyViewModel : ViewModel() {
     var requestList by mutableStateOf<List<User>>(emptyList())
     var statusList by mutableStateOf<List<Status>>(emptyList())
     //
-    var id = 2L // sample logged in account
+    var id = 6L // sample logged in account
 
     var displayName by mutableStateOf("")
     var username by mutableStateOf("")
@@ -139,7 +139,7 @@ class MyViewModel : ViewModel() {
 
                 displayName = newDisplayName
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
     }
@@ -148,7 +148,7 @@ class MyViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 supabase.from("users").update({
-                    set("display_name", newEmail)
+                    set("email", newEmail)
                 }){
                     filter {
                         eq("id", id)
@@ -157,7 +157,7 @@ class MyViewModel : ViewModel() {
 
                 email = newEmail
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
     }
@@ -176,7 +176,7 @@ class MyViewModel : ViewModel() {
 
                 username = newUsername
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
     }
@@ -195,7 +195,7 @@ class MyViewModel : ViewModel() {
 
                 password = newPassword
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
     }
@@ -222,7 +222,7 @@ class MyViewModel : ViewModel() {
 
                 Log.d("Map View Model Location Update", "Latitude: $latitude, Longitude: $longitude")
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
     }
@@ -255,7 +255,7 @@ class MyViewModel : ViewModel() {
                 }
                 status = newStatus
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
     }
@@ -263,16 +263,34 @@ class MyViewModel : ViewModel() {
     fun createRequest(username: String) {
         viewModelScope.launch {
             try {
-                val receiver = supabase.from("users").select() {
+                val receiver = supabase.from("users").select() { // Find the receiver
                         filter {
                             eq("username", username)
                         }
                 }.decodeSingle<User>()
-                val newRequest = Friendship(createdAt = dateFormat.format(Date()), requesterId = id,
-                    receiverId = receiver.id, accepted = false)
-                supabase.from("friendship").insert(newRequest)
+                val oppositeCheck = supabase.from("friendship").select() { // check if opposite request exists
+                    filter {
+                        eq("requester_id", receiver.id)
+                        eq("receiver_id", id)
+                    }
+                }.decodeList<Friendship>()
+                if (oppositeCheck.isNotEmpty() && !oppositeCheck[0].accepted) { // if the opposite request exists just become friends
+                    supabase.from("friendship").update({
+                        set("accept_date", dateFormat.format(Date()))
+                        set("accepted", true)
+                    }) {
+                        filter {
+                            eq("requester_id", receiver.id)
+                            eq("receiver_id", id)
+                        }
+                    }
+                } else if (oppositeCheck.isEmpty() && receiver.id != id) { // if not create a new friend request
+                    val newRequest = Friendship(createdAt = dateFormat.format(Date()), requesterId = id,
+                        receiverId = receiver.id, accepted = false)
+                    supabase.from("friendship").insert(newRequest)
+                }
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
     }
@@ -282,7 +300,7 @@ class MyViewModel : ViewModel() {
             try {
                 supabase.from("friendship").update({
                     set("accept_date", dateFormat.format(Date()))
-                    set("accept", true)
+                    set("accepted", true)
                 }){
                     filter {
                         eq("requester_id", requester)
@@ -290,7 +308,7 @@ class MyViewModel : ViewModel() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
     }
@@ -305,7 +323,7 @@ class MyViewModel : ViewModel() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
 
@@ -323,7 +341,7 @@ class MyViewModel : ViewModel() {
                 }
                 notiStatus = setTo
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
 
@@ -341,7 +359,7 @@ class MyViewModel : ViewModel() {
                 }
                 notiNearby = setTo
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
     }
@@ -358,7 +376,7 @@ class MyViewModel : ViewModel() {
                 }
                 notiMessages = setTo
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
     }

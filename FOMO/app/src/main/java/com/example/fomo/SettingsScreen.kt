@@ -40,7 +40,7 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
   override fun Content() {
     val context = LocalContext.current
     var isLocationSharingEnabled by remember { mutableStateOf(
-            LocationHelper.areLocationPermissionsGranted(context))
+      LocationHelper.areLocationPermissionsGranted(context))
     }
     var isNotificationSharingEnabled by remember { mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled()) }
     val foreground by remember { mutableStateOf(LocationHelper.areLocationPermissionsGranted(context)) }
@@ -85,7 +85,7 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
       ) {
-        Text(text = "Notification Sharing",
+        Text(text = "Notification",
           modifier = Modifier.weight(1f) // Push the text to the left
         )
 
@@ -96,7 +96,12 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
           checked = isNotificationSharingEnabled,
           onCheckedChange = { isEnabled ->
             isNotificationSharingEnabled = isEnabled
-            openSetting(context)
+            //openSetting(context)
+            if (!isEnabled) {
+              myViewModel.updateNotiStatus(false)
+              myViewModel.updateNotiMessages(false)
+              myViewModel.updateNotiNearby(false)
+            }
 
           }
         )
@@ -117,7 +122,7 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
           checked = myViewModel.notiStatus,
           onCheckedChange = { isEnabled ->
             myViewModel.updateNotiStatus(isEnabled)
-
+            isNotificationSharingEnabled = true
           }
         )
       }
@@ -137,7 +142,7 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
           checked = myViewModel.notiNearby,
           onCheckedChange = { isEnabled ->
             myViewModel.updateNotiNearby(isEnabled)
-
+            isNotificationSharingEnabled = true
           }
         )
       }
@@ -157,6 +162,7 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
           checked = myViewModel.notiMessages,
           onCheckedChange = { isEnabled ->
             myViewModel.updateNotiMessages(isEnabled)
+            isNotificationSharingEnabled = true
           }
         )
       }
