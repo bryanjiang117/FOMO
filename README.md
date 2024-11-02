@@ -40,5 +40,10 @@ APK: https://git.uwaterloo.ca/b3jiang/team-6/-/blob/main/releases/fomo010.apk?re
 https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Version-0.10-Release  
 https://git.uwaterloo.ca/b3jiang/team-6/-/releases/0.10
 
+0.20:
+APK: https://git.uwaterloo.ca/b3jiang/team-6/-/blob/main/releases/fomo020.apk?ref_type=heads
+https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Version-0.20-Release
+https://git.uwaterloo.ca/b3jiang/team-6/-/releases/0.20
+
 ## JDK Version
 21.04
