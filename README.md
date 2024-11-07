@@ -34,6 +34,9 @@ https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/M4:-Meeting-Minutes
 ## Sprint 2
 https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/M5:-Meeting-Minutes
 
+## Sprint 3  
+https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/M6:-Meeting-Minutes
+
 ## Releases
 0.10:  
 APK: https://git.uwaterloo.ca/b3jiang/team-6/-/blob/main/releases/fomo010.apk?ref_type=heads  
