@@ -96,24 +96,28 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun NavigatorFun(myViewModel: MyViewModel) {
-  Navigator(MapScreen(myViewModel)) { Content(myViewModel) }
+  Navigator(SignIn(myViewModel)) { Content(myViewModel) }
 }
 
 @Composable
 fun Content(myViewModel: MyViewModel) {
-
-  Scaffold(
+  if (myViewModel.signedIn) {
+    Scaffold(
       modifier = Modifier.fillMaxSize(),
-      bottomBar = { Navbar(viewModel = myViewModel) }) { innerPadding
-        ->
-        // Pass the innerPadding as a modifier to the Content
-        Column(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally) {
-              CurrentScreen() // Show the current screen
-            }
+      bottomBar = { Navbar(viewModel = myViewModel) }
+    ) {
+        innerPadding ->
+      // Pass the innerPadding as a modifier to the Content
+      Column(
+        modifier = Modifier.fillMaxSize().padding(innerPadding),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally) {
+        CurrentScreen() // Show the current screen
       }
+    }
+  } else {
+    CurrentScreen() // Show the current screen
+  }
 }
 
 @Composable

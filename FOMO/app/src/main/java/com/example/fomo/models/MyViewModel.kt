@@ -34,6 +34,8 @@ class MyViewModel : ViewModel() {
         install(Postgrest)
     }
 
+    var signedIn by mutableStateOf<Boolean>(false) // temp variable to simulate auth
+
     // State to hold the list of friendships
     var friendsList by mutableStateOf<List<User>>(emptyList())
     var requestList by mutableStateOf<List<User>>(emptyList())
