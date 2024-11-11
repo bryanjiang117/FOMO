@@ -124,7 +124,6 @@ fun Nav(selectedTab: Int, onSelectTab: (Int) -> Unit){
 
 @Composable
 fun FriendsList(myViewModel: MyViewModel) {
-  var isLoaded by remember { mutableStateOf(false) }
   val friends = myViewModel.friendsList
   val myLocation = myViewModel.center
   val friendsWithDistance = mutableListOf<Pair<User, Double>>()
@@ -225,13 +224,12 @@ fun AddFriends(myViewModel: MyViewModel) {
 
 @Composable
 fun Requests(myViewModel: MyViewModel) {
-  var requests by remember { mutableStateOf<List<User>>(myViewModel.requestList) }
-
 
   Column(
     verticalArrangement = Arrangement.spacedBy(16.dp)
   ) {
-    for(request in requests) {
+    Text("Requests: ${myViewModel.requestList.size}")
+    for(request in myViewModel.requestList) {
       Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier
