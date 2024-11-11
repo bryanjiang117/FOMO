@@ -66,9 +66,11 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 class MainActivity : ComponentActivity() {
   private val myViewModel: MyViewModel by viewModels()
+  private val coroutineScope = CoroutineScope(Dispatchers.Main)
 
   @RequiresApi(Build.VERSION_CODES.Q)
 
@@ -90,9 +92,24 @@ class MainActivity : ComponentActivity() {
         NavigatorFun(myViewModel = myViewModel)
       }
     }
+
+    updateData()
+  }
+
+  private fun updateData() {
+    coroutineScope.launch {
+      while (isActive) {
+        myViewModel.fetchFriends()
+        delay(20000)
+      }
+    }
+  }
+
+  override fun onDestroy() {
+    super.onDestroy()
+    coroutineScope.cancel()
   }
 }
-
 
 @Composable
 fun NavigatorFun(myViewModel: MyViewModel) {

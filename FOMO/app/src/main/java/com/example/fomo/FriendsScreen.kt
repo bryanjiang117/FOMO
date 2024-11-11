@@ -320,12 +320,12 @@ fun AddFriends(myViewModel: MyViewModel) {
 
 @Composable
 fun Requests(myViewModel: MyViewModel) {
-  val requests by remember { mutableStateOf<List<User>>(myViewModel.requestList) }
 
   Column(
     verticalArrangement = Arrangement.spacedBy(16.dp)
   ) {
-    for(request in requests) {
+    Text("Requests: ${myViewModel.requestList.size}")
+    for(request in myViewModel.requestList) {
       Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier

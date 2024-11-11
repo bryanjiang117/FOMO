@@ -76,6 +76,7 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
           onClick = {
             showDialog = true
             toChange = "Display Name"
+            newValue = myViewModel.displayName
           }
         ) {
           Text("Change", color = MaterialTheme.colorScheme.primary)
@@ -97,6 +98,7 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
           onClick = {
             showDialog = true
             toChange = "Email"
+            newValue = myViewModel.email
           }
         ) {
           Text("Change", color = MaterialTheme.colorScheme.primary)
@@ -118,6 +120,7 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
           onClick = {
             showDialog = true
             toChange = "Username"
+            newValue = myViewModel.username
           }
         ) {
           Text("Change", color = MaterialTheme.colorScheme.primary)
