@@ -308,6 +308,34 @@ class MyViewModel : ViewModel() {
         }
     }
 
+    fun removeFriend(username: String) {
+        viewModelScope.launch {
+            try {
+                val friendToRemove = supabase.from("users").select() {
+                    filter {
+                        eq("username", username);
+                    }
+                }.decodeSingle<User>()
+                val res = supabase.from("friendship").delete() {
+                    filter {
+                        or {
+                            and {
+                                eq("requester_id", friendToRemove.id);
+                                eq("receiver_id", id);
+                            }
+                            and {
+                                eq("requester_id", id);
+                                eq("receiver_id", friendToRemove.id);
+                            }
+                        }
+                    }
+                }
+            } catch(e: Exception) {
+                Log.e("SupabaseConnection", "DB Error: ${e.message}");
+            }
+        }
+    }
+
     fun acceptRequest(requester: Long, receiver: Long) {
         viewModelScope.launch {
             try {

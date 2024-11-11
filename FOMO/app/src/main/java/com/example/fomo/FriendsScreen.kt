@@ -20,8 +20,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
-import androidx.compose.material3.*
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardActions
@@ -35,6 +41,7 @@ import android.util.Log
 import com.example.fomo.models.MyViewModel
 import com.google.android.gms.maps.model.LatLng
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
@@ -43,6 +50,10 @@ import androidx.compose.material.ripple.rememberRipple
 import com.example.fomo.const.Colors
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.Alignment
 import com.example.fomo.models.User
 
@@ -123,10 +134,70 @@ fun Nav(selectedTab: Int, onSelectTab: (Int) -> Unit){
 }
 
 @Composable
+fun RemoveFriendConfirmation(friend: User?, onDismissRequest: () -> Unit,
+                             onConfirmation: () -> Unit, ) {
+  AlertDialog(
+    icon = {
+    },
+    title = {
+      Text(text = "Confirmation")
+    },
+    text = {
+      Text(text = "Are you sure you want to remove ${friend!!.displayName} as a friend?")
+    },
+    onDismissRequest = {
+      onDismissRequest()
+    },
+    confirmButton = {
+      TextButton(
+        onClick = {
+          onConfirmation()
+        }
+      ) {
+        Text("Confirm")
+      }
+    },
+    dismissButton = {
+      TextButton(
+        onClick = {
+          onDismissRequest()
+        }
+      ) {
+        Text("Dismiss")
+      }
+    }
+  )
+}
+
+@Composable
 fun FriendsList(myViewModel: MyViewModel) {
+  var isLoaded by remember { mutableStateOf<Boolean>(false) }
+  var expanded = remember { mutableStateMapOf<Long, Boolean>() }
+  var showRemoveFriendConfirmation by remember { mutableStateOf<Boolean>(false) }
+  var selectedFriend by remember {mutableStateOf<User?>(null)}
   val friends = myViewModel.friendsList
   val myLocation = myViewModel.center
   val friendsWithDistance = mutableListOf<Pair<User, Double>>()
+
+  // Start of Remove Friend Confirmation
+  fun openRemoveFriendConfirmation(friend: User) {
+    selectedFriend = friend
+    showRemoveFriendConfirmation = true
+  }
+
+  fun onDismissRequest() {
+    selectedFriend = null
+  }
+
+  fun onConfirmationRequest() {
+    showRemoveFriendConfirmation = false
+    myViewModel.removeFriend(selectedFriend!!.username)
+  }
+
+  if (showRemoveFriendConfirmation && selectedFriend != null) {
+    RemoveFriendConfirmation(selectedFriend, ::onDismissRequest, ::onConfirmationRequest)
+  }
+  // End of Remove Friend Confirmation
 
   // Creating list of friends with distances to sort by distance
   for(friend in friends) {
@@ -145,6 +216,7 @@ fun FriendsList(myViewModel: MyViewModel) {
 
       Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.height(75.dp)
       ) {
         Image(
@@ -152,7 +224,7 @@ fun FriendsList(myViewModel: MyViewModel) {
           contentDescription = "Profile Picture",
           contentScale = ContentScale.Crop,
           modifier = Modifier
-            .size(75.dp)
+            .size(65.dp)
             .clip(CircleShape)
         )
         Column(
@@ -177,6 +249,31 @@ fun FriendsList(myViewModel: MyViewModel) {
             text = "${friendStatus.emoji} ${friendStatus.description}",
             fontSize = 16.sp,
           )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        Box {
+          Icon(
+            imageVector = Icons.Default.MoreVert,
+            contentDescription = "Options",
+            modifier = Modifier.clickable(
+              onClick = {
+                expanded[friend.id] = true
+              }
+            )
+          )
+          DropdownMenu(
+            expanded = expanded[friend.id] ?: false,
+            onDismissRequest = { expanded[friend.id] = false },
+          ) {
+            DropdownMenuItem(
+              onClick = {
+                openRemoveFriendConfirmation(friend)
+              },
+              text = {
+                Text("Remove Friend")
+              },
+            )
+          }
         }
       }
     }
@@ -219,7 +316,6 @@ fun AddFriends(myViewModel: MyViewModel) {
         color = MaterialTheme.colorScheme.primary, fontSize=18.sp)
     }
   }
-
 }
 
 @Composable
