@@ -16,7 +16,6 @@ import com.example.fomo.BuildConfig
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -24,6 +23,7 @@ import java.util.Locale
 
 
 class MyViewModel : ViewModel() {
+
     val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
     val defaultStatus = Status(id=7, dateFormat.format(Date()), "Idle", "\uD83D\uDCA4")
 
@@ -55,32 +55,13 @@ class MyViewModel : ViewModel() {
     var center by mutableStateOf(LatLng(43.4723, -80.5449))
     var status by mutableStateOf<Status>(defaultStatus)
 
-
-    fun fetchDatabase() {
+    fun fetchFriends() {
         viewModelScope.launch {
             try {
                 val userRes = supabase.from("users")
                 val friendshipRes = supabase.from("friendship")
                     .select()
                     .decodeList<Friendship>()
-                val statusRes = supabase.from("statuses").select().decodeList<Status>()
-
-                val me = supabase.from("users").select() {
-                    filter {
-                        eq("id", id)
-                    }
-                }.decodeSingle<User>()
-
-                displayName = me.displayName
-                username = me.username
-                email = me.email
-                password = me.password
-                notiNearby = me.notiNearby
-                notiStatus = me.notiStatus
-                notiMessages = me.notiMessages
-                status = statusRes.filter {it.id == me.status_id}[0]
-
-
                 val tempFriends = mutableListOf<User>()
                 val tempRequesters = mutableListOf<User>()
                 for (friendship in friendshipRes) {
@@ -117,8 +98,38 @@ class MyViewModel : ViewModel() {
                     }
                 }
                 friendsList = tempFriends
-                statusList = statusRes
                 requestList = tempRequesters
+
+
+            } catch (e: Exception) {
+                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+            }
+        }
+    }
+
+    fun fetchDatabase() {
+        viewModelScope.launch {
+            try {
+                val statusRes = supabase.from("statuses").select().decodeList<Status>()
+
+                val me = supabase.from("users").select() {
+                    filter {
+                        eq("id", id)
+                    }
+                }.decodeSingle<User>()
+
+                statusList = statusRes
+                displayName = me.displayName
+                username = me.username
+                email = me.email
+                password = me.password
+                notiNearby = me.notiNearby
+                notiStatus = me.notiStatus
+                notiMessages = me.notiMessages
+                status = statusRes.filter {it.id == me.status_id}[0]
+
+
+                fetchFriends()
 
 
                 Log.d("SupabaseConnection", "Friends fetched: $friendsList")
@@ -286,10 +297,12 @@ class MyViewModel : ViewModel() {
                             eq("receiver_id", id)
                         }
                     }
+                    fetchFriends()
                 } else if (oppositeCheck.isEmpty() && receiver.id != id) { // if not create a new friend request
                     val newRequest = Friendship(createdAt = dateFormat.format(Date()), requesterId = id,
                         receiverId = receiver.id, accepted = false)
                     supabase.from("friendship").insert(newRequest)
+                    fetchFriends()
                 }
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
@@ -319,6 +332,7 @@ class MyViewModel : ViewModel() {
                         }
                     }
                 }
+                fetchFriends()
             } catch(e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}");
             }
@@ -337,6 +351,7 @@ class MyViewModel : ViewModel() {
                         eq("receiver_id", receiver)
                     }
                 }
+                fetchFriends()
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
@@ -352,6 +367,7 @@ class MyViewModel : ViewModel() {
                         eq("receiver_id", receiver)
                     }
                 }
+                fetchFriends()
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }

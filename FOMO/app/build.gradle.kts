@@ -55,6 +55,7 @@ dependencies {
   implementation("io.github.jan-tennert.supabase:postgrest-kt")
   implementation("io.ktor:ktor-client-android:3.0.0")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
