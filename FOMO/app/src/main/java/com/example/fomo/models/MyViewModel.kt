@@ -330,6 +330,7 @@ class MyViewModel : ViewModel() {
                         }
                     }
                 }
+                fetchFriends()
             } catch(e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}");
             }
