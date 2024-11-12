@@ -1,13 +1,25 @@
 package com.example.fomo
 
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.PedalBike
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -110,7 +122,7 @@ fun Map(myViewModel: MyViewModel) {
           )
         }
 
-        if (myViewModel.selectedLocation != null) {
+        if (myViewModel.selectedLocation != null && myViewModel.status.description == "On my way") {
           Marker(
             state = markerState,
             title = "On my way",
@@ -128,14 +140,15 @@ fun Map(myViewModel: MyViewModel) {
       }
     }
 
+    // Display Status
     Card(
-      modifier = Modifier
-        .align(Alignment.TopEnd) // Position card at the top center
-        .padding(16.dp), // Padding from the top or screen edges
       colors = CardDefaults.cardColors(
         containerColor = Color.White
       ),
       shape = RoundedCornerShape(24.dp),
+      modifier = Modifier
+        .align(Alignment.TopEnd) // Position card at the top center
+        .padding(16.dp), // Padding from the top or screen edges
     ) {
       Column(
         modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
@@ -150,6 +163,39 @@ fun Map(myViewModel: MyViewModel) {
 //        )
       }
     }
-  }
 
+    val modesList: Array<Pair<String, @Composable () -> Unit>> = arrayOf(
+      Pair("walking", {Icon(imageVector = Icons.AutoMirrored.Default.DirectionsWalk, contentDescription = "Walking")}),
+      Pair("bicycling", {Icon(imageVector = Icons.Default.PedalBike, contentDescription = "Bicycling")}),
+      Pair("driving", {Icon(imageVector = Icons.Default.DirectionsCar, contentDescription = "Car")}),
+      Pair("transit", {Icon(imageVector = Icons.Default.DirectionsBus, contentDescription = "Bus")}),
+    )
+
+    if (myViewModel.selectedLocation != null && myViewModel.status.description == "On my way") {
+      Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+          .align(Alignment.TopStart)
+          .padding(16.dp)
+      )
+      {
+        for ((modeString, icon) in modesList) {
+          Button(
+            onClick = {
+              myViewModel.mode = modeString
+              myViewModel.onMyWay(myViewModel.selectedLocation!!)
+            },
+            colors = ButtonDefaults.buttonColors(
+              containerColor = if (modeString == myViewModel.mode) Colors.primary else Colors.greyed
+            ),
+            shape = CircleShape,
+            contentPadding = PaddingValues(4.dp),
+            modifier = Modifier.size(64.dp)
+          ) {
+            icon()
+          }
+        }
+      }
+    }
+  }
 }

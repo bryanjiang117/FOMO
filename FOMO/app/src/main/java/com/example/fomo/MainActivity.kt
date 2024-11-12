@@ -1,7 +1,5 @@
 package com.example.fomo
 
-// Voyager Navigator
-// Theme
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context

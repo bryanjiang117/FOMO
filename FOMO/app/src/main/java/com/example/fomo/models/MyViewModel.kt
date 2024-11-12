@@ -118,13 +118,19 @@ class MyViewModel : ViewModel() {
     var statusList by mutableStateOf<List<Status>>(emptyList())
     var selectedLocation by mutableStateOf<LatLng?>(null)
     var routePoints by mutableStateOf<List<LatLng>?>(null)
+    var mode by mutableStateOf<String>("walking")
 
     // Start of Map Functions
 
     fun onMyWay(coords: LatLng) {
+        if (status.description != "On my way") {
+            return
+        }
+        selectedLocation = null
+        routePoints = null
         viewModelScope.launch {
             selectedLocation = coords
-            routePoints = getRoute(center, selectedLocation!!)
+            routePoints = getRoute(center, selectedLocation!!, mode)
             updateStatus(statusList.filter{status -> status.description == "On my way"}[0])
         }
     }
@@ -149,7 +155,7 @@ class MyViewModel : ViewModel() {
     }
 
     // mode should be "walking", "driving", "bicycling", "transit"
-    suspend fun getRoute(origin: LatLng, destination: LatLng, mode: String = "walking"): List<LatLng>? {
+    suspend fun getRoute(origin: LatLng, destination: LatLng, mode: String): List<LatLng>? {
         try {
             val response: DirectionsResponse = ktorClient.get("https://maps.googleapis.com/maps/api/directions/json") {
                 parameter("origin", "${origin.latitude},${origin.longitude}")
