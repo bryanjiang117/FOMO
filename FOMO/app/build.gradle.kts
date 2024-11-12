@@ -77,6 +77,17 @@ dependencies {
   implementation(libs.android.maps.utils)
   implementation(libs.firebase.firestore.ktx)
 
+  // KTOR (API)
+  implementation(libs.ktor.client.core)
+  implementation(libs.ktor.client.cio) // or ktor-client-okhttp for Android
+  implementation(libs.ktor.client.serialization)
+  implementation(libs.ktor.serialization.kotlinx.json)
+
+  // Icons
+  implementation(libs.material.icons.core)
+  implementation(libs.material.icons.extended)
+
+  // General
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
@@ -102,8 +113,4 @@ dependencies {
   debugImplementation(libs.androidx.ui.tooling)
   debugImplementation(libs.androidx.ui.test.manifest)
   implementation(libs.voyager.navigator)
-
-  // Icons
-  implementation(libs.material.icons.core)
-  implementation(libs.material.icons.extended)
 }
