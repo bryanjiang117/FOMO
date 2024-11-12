@@ -1,7 +1,5 @@
 package com.example.fomo
 
-// Voyager Navigator
-// Theme
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -113,24 +111,28 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun NavigatorFun(myViewModel: MyViewModel) {
-  Navigator(MapScreen(myViewModel)) { Content(myViewModel) }
+  Navigator(SignIn(myViewModel)) { Content(myViewModel) }
 }
 
 @Composable
 fun Content(myViewModel: MyViewModel) {
-
-  Scaffold(
+  if (myViewModel.signedIn) {
+    Scaffold(
       modifier = Modifier.fillMaxSize(),
-      bottomBar = { Navbar(viewModel = myViewModel) }) { innerPadding
-        ->
-        // Pass the innerPadding as a modifier to the Content
-        Column(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally) {
-              CurrentScreen() // Show the current screen
-            }
+      bottomBar = { Navbar(viewModel = myViewModel) }
+    ) {
+        innerPadding ->
+      // Pass the innerPadding as a modifier to the Content
+      Column(
+        modifier = Modifier.fillMaxSize().padding(innerPadding),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally) {
+        CurrentScreen() // Show the current screen
       }
+    }
+  } else {
+    CurrentScreen() // Show the current screen
+  }
 }
 
 @Composable
@@ -142,42 +144,27 @@ fun State(state: String, modifier: Modifier = Modifier) {
 @Composable
 fun Navbar(viewModel: MyViewModel) {
   val navigator = LocalNavigator.current
+  val items: Array<Pair<() -> Unit, @Composable () -> Unit>> = arrayOf(
+    Pair({ navigator?.push(MapScreen(viewModel)) }, {Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Map Icon")}),
+    Pair({ navigator?.push(FriendsScreen(viewModel)) }, {Icon(imageVector = Icons.Default.People, contentDescription = "Friends Icon")}),
+    Pair({ navigator?.push(ProfileScreen(viewModel)) }, {Icon(imageVector = Icons.Default.Person, contentDescription = "Profile Icon")}),
+    Pair({ navigator?.push(SettingsScreen(viewModel)) }, {Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings Icon")}),
+  )
   CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
     Row(
         modifier = Modifier.fillMaxWidth(),
     ) {
-      Button(
-          onClick = { navigator?.push(MapScreen(viewModel)) },
+      for ((onClick, icon) in items) {
+        Button(
+          onClick = onClick,
           modifier = Modifier.weight(1f),
           shape = RectangleShape,
           contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = Colors.primary)) {
-            Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Map Icon")
-          }
-      Button(
-          onClick = { navigator?.push(FriendsScreen(viewModel)) },
-          modifier = Modifier.weight(1f),
-          shape = RectangleShape,
-          contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = Colors.primary)) {
-            Icon(imageVector = Icons.Default.People, contentDescription = "Friends Icon")
-          }
-      Button(
-          onClick = { navigator?.push(ProfileScreen(viewModel)) },
-          modifier = Modifier.weight(1f),
-          shape = RectangleShape,
-          contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = Colors.primary)) {
-            Icon(imageVector = Icons.Default.Person, contentDescription = "Profile Icon")
-          }
-      Button(
-          onClick = { navigator?.push(SettingsScreen(viewModel)) },
-          modifier = Modifier.weight(1f),
-          shape = RectangleShape,
-          contentPadding = PaddingValues(top = 25.dp, bottom = 25.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA0D683))) {
-            Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings Icon")
-          }
+          colors = ButtonDefaults.buttonColors(containerColor = Colors.primary)
+        ) {
+          icon()
+        }
+      }
     }
   }
 }
