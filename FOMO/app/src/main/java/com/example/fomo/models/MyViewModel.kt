@@ -16,6 +16,8 @@ import com.google.maps.android.SphericalUtil
 import com.example.fomo.BuildConfig
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -31,6 +33,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import com.google.maps.android.PolyUtil
+import io.github.jan.supabase.auth.auth
 
 @Serializable
 data class GeocodeResponse(
@@ -90,7 +93,10 @@ class MyViewModel : ViewModel() {
         supabaseKey = BuildConfig.SUPABASE_KEY
     ) {
         install(Postgrest)
+        install(Auth)
     }
+    private val auth = supabase.auth
+
     private val ktorClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
@@ -101,10 +107,12 @@ class MyViewModel : ViewModel() {
     var signedIn by mutableStateOf<Boolean>(false) // temp variable to simulate auth
     var id = 2L // sample logged in account
 
+
     // user
     var displayName by mutableStateOf("")
     var username by mutableStateOf("")
     var email by mutableStateOf("")
+    var uid by mutableStateOf("")
     private var password by mutableStateOf("")
     var notiNearby by mutableStateOf(false)
     var notiStatus by mutableStateOf(false)
@@ -178,6 +186,75 @@ class MyViewModel : ViewModel() {
 
     // End of Map Functions
 
+    // Start of Auth Functions
+
+    fun signUp(email: String, password: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                // Call Supabase's signUpWith function
+                val user = supabase.auth.signUpWith(Email) {
+                    this.email = email
+                    this.password = password
+                }
+
+                if (user != null) {
+                    Log.d("SupabaseAuth", "User created: ${user.email}")
+                    onResult(true)
+                } else {
+                    Log.d("SupabaseAuth", "User created and logged in automatically")
+                    onResult(true)
+                }
+            } catch (e: Exception) {
+                Log.e("SupabaseAuth", "Sign-up failed: ${e.message}")
+                onResult(false)
+            }
+        }
+    }
+    fun signIn(email: String, password: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try{
+                supabase.auth.signInWith(Email) {
+                    this.email = email
+                    this.password = password
+                }
+
+                val session = supabase.auth.currentSessionOrNull()
+                val user = supabase.auth.retrieveUserForCurrentSession(updateSession = true)
+
+
+                if (session != null) {
+                    Log.d("SupabaseAuth", "Session active, userid ${user.id}")
+                    uid = user.id
+                    onResult(true)
+                } else {
+                    Log.d("SupabaseAuth", "Sign-in credentials invalid")
+                    onResult(false)
+                }
+
+            } catch (e: Exception) {
+                Log.e("SupabaseAuth", "Sign-in failed: ${e.message}")
+                onResult(false)
+            }
+        }
+
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            try {
+                supabase.auth.signOut()
+                Log.d("SupabaseAuth", "User signed out")
+                signedIn = false
+                uid = ""
+            } catch (e: Exception) {
+                Log.e("SupabaseAuth", "failed to sign out: ${e.message}")
+            }
+        }
+    }
+
+
+    // End of Auth Functions
+
 
     // Start of Database Functions
 
@@ -240,7 +317,7 @@ class MyViewModel : ViewModel() {
 
                 val me = supabase.from("users").select() {
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }.decodeSingle<User>()
 

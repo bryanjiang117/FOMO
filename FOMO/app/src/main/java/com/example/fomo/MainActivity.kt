@@ -74,9 +74,9 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    lifecycleScope.launch {
-      myViewModel.fetchDatabase()
-    }
+//    lifecycleScope.launch {
+//      myViewModel.fetchDatabase()
+//    }
 
     val backgroundLocationGranted = LocationHelper.isBackgroundLocationPermissionGranted(this)
     val locationPermissionsAlreadyGranted = LocationHelper.areLocationPermissionsGranted(this)
@@ -96,7 +96,7 @@ class MainActivity : ComponentActivity() {
 
   private fun updateData() {
     coroutineScope.launch {
-      while (isActive) {
+      while (isActive && myViewModel.signedIn) {
         myViewModel.fetchFriends()
         delay(20000)
       }
