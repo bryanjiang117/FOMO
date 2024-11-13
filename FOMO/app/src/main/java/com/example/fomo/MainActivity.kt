@@ -82,6 +82,7 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
 
     createNotificationChannel()
+    createFriendRequestChannel()
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
       if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -119,8 +120,21 @@ class MainActivity : ComponentActivity() {
     updateData()
   }
 
-  private fun createNotificationChannel() {
 
+  private fun createFriendRequestChannel(){
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val name = "Friend Requests"
+      val descriptionText = "Notifications for new friend requests"
+      val importance = NotificationManager.IMPORTANCE_DEFAULT
+      val channel = NotificationChannel("friend_request_channel", name, importance).apply {
+        description = descriptionText
+      }
+      val notificationManager: NotificationManager =
+        getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      notificationManager.createNotificationChannel(channel)
+    }
+  }
+  private fun createNotificationChannel() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val name = "myChannel"
       val descriptionText = "Notification Channel Description"
