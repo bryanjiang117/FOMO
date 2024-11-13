@@ -1,5 +1,11 @@
 package com.example.fomo
 
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -53,9 +59,15 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.example.fomo.models.User
+import io.ktor.client.request.request
 
 
 class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
@@ -167,6 +179,44 @@ fun RemoveFriendConfirmation(friend: User?, onDismissRequest: () -> Unit,
       }
     }
   )
+}
+
+fun createNotificationChannel(context: Context){
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    val name = "Friend Requests"
+    val descriptionText = "Notifications for new friend requests"
+    val importance = NotificationManager.IMPORTANCE_DEFAULT
+    val channel = NotificationChannel("friend_request_channel", name, importance).apply {
+      description = descriptionText
+    }
+    val notificationManager: NotificationManager =
+      context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    notificationManager.createNotificationChannel(channel)
+  }
+}
+
+fun showNotification(context: Context, message: String) {
+  val builder = NotificationCompat.Builder(context, "friend_request_channel")
+    .setSmallIcon(R.drawable.notification_icon) // Replace with your icon
+    .setContentTitle("New Friend Request")
+    .setContentText(message)
+    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+  with(NotificationManagerCompat.from(context)) {
+    // Ensure permission is granted for Android 13+
+    if (ActivityCompat.checkSelfPermission(
+        context,
+        Manifest.permission.POST_NOTIFICATIONS
+      ) == PackageManager.PERMISSION_GRANTED
+    ) {
+      Log.d("FriendsScreen","allowed")
+      // Show the notification with a unique ID
+      notify(1, builder.build())
+    } else {
+      Log.d("FriendsScreen","not Allowed")
+
+    }
+  }
 }
 
 @Composable
@@ -320,6 +370,16 @@ fun AddFriends(myViewModel: MyViewModel) {
 
 @Composable
 fun Requests(myViewModel: MyViewModel) {
+  val context = LocalContext.current;
+  val requestList = myViewModel.requestList
+  var previousRequestCount by remember { mutableStateOf(requestList.size)}
+
+  LaunchedEffect(requestList.size){
+    if (requestList.size > previousRequestCount){
+      showNotification(context, "You have a new friend request from ${requestList.lastOrNull()?.username ?: "someone"}")
+    }
+    previousRequestCount = requestList.size
+  }
 
   Column(
     verticalArrangement = Arrangement.spacedBy(16.dp)
