@@ -44,6 +44,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import cafe.adriel.voyager.core.screen.Screen
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.fomo.models.MyViewModel
 import com.google.android.gms.maps.model.LatLng
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -66,6 +68,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.example.fomo.models.User
 import io.ktor.client.request.request
 
@@ -181,19 +184,7 @@ fun RemoveFriendConfirmation(friend: User?, onDismissRequest: () -> Unit,
   )
 }
 
-fun createNotificationChannel(context: Context){
-  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-    val name = "Friend Requests"
-    val descriptionText = "Notifications for new friend requests"
-    val importance = NotificationManager.IMPORTANCE_DEFAULT
-    val channel = NotificationChannel("friend_request_channel", name, importance).apply {
-      description = descriptionText
-    }
-    val notificationManager: NotificationManager =
-      context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    notificationManager.createNotificationChannel(channel)
-  }
-}
+
 
 fun showNotification(context: Context, message: String) {
   val builder = NotificationCompat.Builder(context, "friend_request_channel")
@@ -211,7 +202,7 @@ fun showNotification(context: Context, message: String) {
     ) {
       Log.d("FriendsScreen","allowed")
       // Show the notification with a unique ID
-      notify(1, builder.build())
+      notify(2, builder.build())
     } else {
       Log.d("FriendsScreen","not Allowed")
 
@@ -374,9 +365,31 @@ fun Requests(myViewModel: MyViewModel) {
   val requestList = myViewModel.requestList
   var previousRequestCount by remember { mutableStateOf(requestList.size)}
 
-  LaunchedEffect(requestList.size){
-    if (requestList.size > previousRequestCount){
-      showNotification(context, "You have a new friend request from ${requestList.lastOrNull()?.username ?: "someone"}")
+  val notificationPermissionLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.RequestPermission(),
+    onResult = { isGranted ->
+      if (isGranted) {
+        showNotification(context, "You have a new friend request from ${requestList.lastOrNull()?.username ?: "someone"}")
+      }
+    }
+  )
+
+//   Check for new friend requests and show notification
+  LaunchedEffect(requestList.size) {
+    if (requestList.size > previousRequestCount) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+          ) != PackageManager.PERMISSION_GRANTED
+        ) {
+          notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+          showNotification(context, "You have a new friend request from ${requestList.lastOrNull()?.username ?: "someone"}")
+        }
+      } else {
+        showNotification(context, "You have a new friend request from ${requestList.lastOrNull()?.username ?: "someone"}")
+      }
     }
     previousRequestCount = requestList.size
   }
