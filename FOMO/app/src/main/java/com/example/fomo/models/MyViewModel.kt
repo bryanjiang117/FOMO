@@ -31,9 +31,13 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import com.google.maps.android.PolyUtil
+import kotlinx.coroutines.delay
 
 
 class MyViewModel : ViewModel() {
+    init {
+        startPollingFriendRequests()
+    }
 
     // constants
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
@@ -77,6 +81,16 @@ class MyViewModel : ViewModel() {
     var places by mutableStateOf<List<Place>>(emptyList())
 
     // Start of Map Functions
+
+    fun startPollingFriendRequests(){
+        viewModelScope.launch {
+            while(true){
+                Log.d("MyViewModel", "pulling new friends requests")
+                fetchFriends()
+                delay(30000)
+            }
+        }
+    }
 
     fun onMyWay(coords: LatLng) {
         if (status.description != "On my way") {
