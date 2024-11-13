@@ -32,51 +32,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import com.google.maps.android.PolyUtil
 
-@Serializable
-data class GeocodeResponse(
-    val results: List<Result>,
-    val status: String
-)
-
-@Serializable
-data class Result(
-    val place_id: String,
-    val formatted_address: String
-)
-
-@Serializable
-data class DirectionsResponse(
-    val routes: List<Route>
-)
-
-@Serializable
-data class Route(
-    val legs: List<Leg>,
-    val overview_polyline: Polyline
-)
-
-@Serializable
-data class Leg(
-    val distance: Distance,
-    val duration: Duration
-)
-
-@Serializable
-data class Distance(
-    val text: String,
-    val value: Int
-)
-
-@Serializable
-data class Duration(
-    val text: String,
-    val value: Int
-)
-
-@Serializable
-data class Polyline(
-    val points: String
-)
 
 class MyViewModel : ViewModel() {
 
@@ -119,6 +74,7 @@ class MyViewModel : ViewModel() {
     var selectedLocation by mutableStateOf<LatLng?>(null)
     var routePoints by mutableStateOf<List<LatLng>?>(null)
     var mode by mutableStateOf<String>("walking")
+    var places by mutableStateOf<List<Place>>(emptyList())
 
     // Start of Map Functions
 
@@ -180,6 +136,45 @@ class MyViewModel : ViewModel() {
 
 
     // Start of Database Functions
+
+    fun fetchPlaces() {
+        viewModelScope.launch {
+            try {
+                places = supabase.from("places").select() {
+                    filter {
+                        eq("owner_id", id)
+                    }
+                }.decodeList<Place>()
+            } catch (e: Exception) {
+                Log.e("Supabase fetchPlaces()", "Error: ${e.message}")
+            }
+        }
+    }
+
+    fun setPlace(name:String, coords: LatLng, radius: Double) {
+        viewModelScope.launch {
+            try {
+                val newPlace = Place(name, coords.latitude, coords.longitude, radius, id)
+                supabase.from("places").insert(newPlace)
+            } catch (e: Exception) {
+                Log.e("Supabase setPlace()", "Error: ${e.message}")
+            }
+        }
+    }
+
+    fun removePlace(id: Long) {
+        viewModelScope.launch {
+            try {
+                supabase.from("places").delete() {
+                    filter {
+                        eq("id", id)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Supabase removePlace()", "Error: ${e.message}")
+            }
+        }
+    }
 
     fun fetchFriends() {
         viewModelScope.launch {
@@ -256,7 +251,7 @@ class MyViewModel : ViewModel() {
 
 
                 fetchFriends()
-
+                fetchPlaces()
 
                 Log.d("SupabaseConnection", "Friends fetched: $friendsList")
             } catch (e: Exception) {

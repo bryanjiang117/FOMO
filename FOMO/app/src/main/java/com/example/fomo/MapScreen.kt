@@ -12,8 +12,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.FlagCircle
 import androidx.compose.material.icons.filled.PedalBike
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -29,6 +32,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
@@ -38,10 +43,14 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.example.fomo.models.MyViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberMarkerState
+import com.google.maps.android.compose.Circle
+import com.google.maps.android.compose.MarkerComposable
+import com.google.maps.android.compose.MarkerState
 
 
 class MapScreen(private val myViewModel: MyViewModel) : Screen {
@@ -52,6 +61,31 @@ class MapScreen(private val myViewModel: MyViewModel) : Screen {
     ) {
       Map(myViewModel)
     }
+  }
+}
+
+@Composable
+fun CustomMapMarker(
+  name: String,
+  location: LatLng,
+  color: Color
+) {
+  val markerState = rememberMarkerState(position = location)
+  MarkerComposable(
+    state = markerState,
+    title = name,
+    anchor = Offset(0.5f, 1f),
+  ) {
+    Icon(
+      imageVector = Icons.Default.Circle,
+      contentDescription = name, tint = color,
+      modifier = Modifier.scale(1.2f)
+    )
+    Icon(
+      imageVector = Icons.Default.Flag,
+      contentDescription = name, tint = Color.White,
+      modifier = Modifier.scale(0.7f)
+    )
   }
 }
 
@@ -99,6 +133,7 @@ fun Map(myViewModel: MyViewModel) {
       if (isMapLoaded) {
         val userPosition = LatLng(myViewModel.userLatitude, myViewModel.userLongitude)  // Create LatLng object
 
+        // user avatar
         Marker(
           state = rememberMarkerState(key = "User Position", userPosition),
           title = myViewModel.displayName,
@@ -122,6 +157,7 @@ fun Map(myViewModel: MyViewModel) {
           )
         }
 
+        // On my way marker + route
         if (myViewModel.selectedLocation != null && myViewModel.status.description == "On my way") {
           Marker(
             state = markerState,
@@ -136,6 +172,21 @@ fun Map(myViewModel: MyViewModel) {
             )
           }
         }
+
+        // Special Places
+        for (place in myViewModel.places) {
+          val center = LatLng(place.latitude, place.longitude)
+          Circle(
+            center = center,
+            radius = place.radius, // in meters
+            fillColor = Colors.translucent,
+            strokeColor = Colors.translucent,
+            strokeWidth = 2f // in pixels
+          )
+          CustomMapMarker(name = place.name, location = center, color = Colors.dark)
+        }
+
+        // special locations
 
       }
     }

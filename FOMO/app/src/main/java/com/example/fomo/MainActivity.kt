@@ -98,6 +98,7 @@ class MainActivity : ComponentActivity() {
     coroutineScope.launch {
       while (isActive) {
         myViewModel.fetchFriends()
+        myViewModel.fetchPlaces()
         delay(20000)
       }
     }
