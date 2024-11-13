@@ -181,6 +181,31 @@ class MyViewModel : ViewModel() {
 
     // Start of Database Functions
 
+    fun setPlace(coords: LatLng, radius: Int) {
+        viewModelScope.launch {
+            try {
+                val newPlace: Place = Place(coords.latitude, coords.longitude, radius)
+                supabase.from("places").insert(newPlace)
+            } catch (e: Exception) {
+                Log.e("Supabase Places", "Error: ${e.message}")
+            }
+        }
+    }
+
+    fun removePlace(id: String) {
+        viewModelScope.launch {
+            try {
+                supabase.from("places").delete() {
+                    filter {
+                        eq("id", id)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Supabase Places", "Error: ${e.message}")
+            }
+        }
+    }
+
     fun fetchFriends() {
         viewModelScope.launch {
             try {

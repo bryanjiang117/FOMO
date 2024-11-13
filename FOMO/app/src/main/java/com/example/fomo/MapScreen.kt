@@ -42,6 +42,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberMarkerState
+import com.google.maps.android.compose.Circle
 
 
 class MapScreen(private val myViewModel: MyViewModel) : Screen {
@@ -99,6 +100,7 @@ fun Map(myViewModel: MyViewModel) {
       if (isMapLoaded) {
         val userPosition = LatLng(myViewModel.userLatitude, myViewModel.userLongitude)  // Create LatLng object
 
+        // user avatar
         Marker(
           state = rememberMarkerState(key = "User Position", userPosition),
           title = myViewModel.displayName,
@@ -122,6 +124,7 @@ fun Map(myViewModel: MyViewModel) {
           )
         }
 
+        // On my way marker + route
         if (myViewModel.selectedLocation != null && myViewModel.status.description == "On my way") {
           Marker(
             state = markerState,
@@ -136,6 +139,15 @@ fun Map(myViewModel: MyViewModel) {
             )
           }
         }
+
+        // special locations
+//        Circle(
+//          center = myViewModel.center,
+//          radius = 500.0, // in meters
+//          fillColor = Colors.primaryTranslucent,
+//          strokeColor = Colors.primaryTranslucent,
+//          strokeWidth = 2f // in pixels
+//        )
 
       }
     }
