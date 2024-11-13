@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.FlagCircle
 import androidx.compose.material.icons.filled.PedalBike
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -29,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
@@ -38,11 +40,14 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.example.fomo.models.MyViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberMarkerState
 import com.google.maps.android.compose.Circle
+import com.google.maps.android.compose.MarkerComposable
+import com.google.maps.android.compose.MarkerState
 
 
 class MapScreen(private val myViewModel: MyViewModel) : Screen {
@@ -53,6 +58,23 @@ class MapScreen(private val myViewModel: MyViewModel) : Screen {
     ) {
       Map(myViewModel)
     }
+  }
+}
+
+@Composable
+fun CustomMapMarker(
+  name: String,
+  location: LatLng,
+  color: Color
+) {
+  val markerState = rememberMarkerState(position = location)
+  MarkerComposable(
+    state = markerState,
+    title = name,
+    anchor = Offset(0.5f, 1f),
+  ) {
+    Icon(imageVector = Icons.Default.FlagCircle, contentDescription = name, tint = color)
+    // this flag icon ^^ is so troll. the center is transparent bruh
   }
 }
 
@@ -140,14 +162,20 @@ fun Map(myViewModel: MyViewModel) {
           }
         }
 
+        // Special Places
+        for (place in myViewModel.places) {
+          val center = LatLng(place.latitude, place.longitude)
+          Circle(
+            center = center,
+            radius = place.radius, // in meters
+            fillColor = Colors.translucent,
+            strokeColor = Colors.translucent,
+            strokeWidth = 2f // in pixels
+          )
+          CustomMapMarker(name = place.name, location = center, color = Colors.dark)
+        }
+
         // special locations
-//        Circle(
-//          center = myViewModel.center,
-//          radius = 500.0, // in meters
-//          fillColor = Colors.primaryTranslucent,
-//          strokeColor = Colors.primaryTranslucent,
-//          strokeWidth = 2f // in pixels
-//        )
 
       }
     }
