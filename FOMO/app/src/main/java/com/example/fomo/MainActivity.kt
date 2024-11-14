@@ -2,6 +2,8 @@ package com.example.fomo
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
@@ -47,7 +49,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.navigator.CurrentScreen
@@ -74,6 +80,29 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+    createNotificationChannel()
+    createFriendRequestChannel()
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        val NOTIFICATION_PERMISSION_REQUEST_CODE = 1001
+        ActivityCompat.requestPermissions(
+          this,
+          arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+          NOTIFICATION_PERMISSION_REQUEST_CODE
+        )
+      } else {
+        showNotification()
+      }
+    } else {
+      showNotification()
+    }
+
+
+    lifecycleScope.launch {
+      myViewModel.fetchDatabase()
+    }
 //    lifecycleScope.launch {
 //      myViewModel.fetchDatabase()
 //    }
@@ -94,10 +123,64 @@ class MainActivity : ComponentActivity() {
     updateData()
   }
 
+
+  private fun createFriendRequestChannel(){
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val name = "Friend Requests"
+      val descriptionText = "Notifications for new friend requests"
+      val importance = NotificationManager.IMPORTANCE_DEFAULT
+      val channel = NotificationChannel("friend_request_channel", name, importance).apply {
+        description = descriptionText
+      }
+      val notificationManager: NotificationManager =
+        getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      notificationManager.createNotificationChannel(channel)
+    }
+  }
+  private fun createNotificationChannel() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val name = "myChannel"
+      val descriptionText = "Notification Channel Description"
+      val importance = NotificationManager.IMPORTANCE_DEFAULT
+      val channel = NotificationChannel("my_channel_id", name, importance).apply {
+        description = descriptionText
+      }
+      val notificationManager: NotificationManager =
+        getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      notificationManager.createNotificationChannel(channel)
+      Log.d("MainActivity", "Notification channel created")
+    }
+  }
+
+  private fun showNotification(){
+    val builder = NotificationCompat.Builder(this, "my_channel_id")
+      .setSmallIcon(R.drawable.notification_icon)
+      .setContentTitle("Welcome!")
+      .setContentText("Thank you for opening the app")
+      .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+    with(NotificationManagerCompat.from(this)) {
+      // Ensure permission is granted for Android 13+
+      if (ActivityCompat.checkSelfPermission(
+          this@MainActivity,
+          Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+      ) {
+        Log.d("MainActivity","allowed")
+        // Show the notification with a unique ID
+        notify(1, builder.build())
+      } else {
+        Log.d("MainActivity","not Allowed")
+
+      }
+    }
+  }
+
   private fun updateData() {
     coroutineScope.launch {
       while (isActive && myViewModel.signedIn) {
         myViewModel.fetchFriends()
+        myViewModel.fetchPlaces()
         delay(20000)
       }
     }

@@ -1,5 +1,11 @@
 package com.example.fomo
 
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +44,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import cafe.adriel.voyager.core.screen.Screen
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.fomo.models.MyViewModel
 import com.google.android.gms.maps.model.LatLng
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -53,9 +61,16 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.example.fomo.models.User
+import io.ktor.client.request.request
 
 
 class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
@@ -167,6 +182,32 @@ fun RemoveFriendConfirmation(friend: User?, onDismissRequest: () -> Unit,
       }
     }
   )
+}
+
+
+
+fun showNotification(context: Context, message: String) {
+  val builder = NotificationCompat.Builder(context, "friend_request_channel")
+    .setSmallIcon(R.drawable.notification_icon) // Replace with your icon
+    .setContentTitle("New Friend Request")
+    .setContentText(message)
+    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+  with(NotificationManagerCompat.from(context)) {
+    // Ensure permission is granted for Android 13+
+    if (ActivityCompat.checkSelfPermission(
+        context,
+        Manifest.permission.POST_NOTIFICATIONS
+      ) == PackageManager.PERMISSION_GRANTED
+    ) {
+      Log.d("FriendsScreen","allowed")
+      // Show the notification with a unique ID
+      notify(2, builder.build())
+    } else {
+      Log.d("FriendsScreen","not Allowed")
+
+    }
+  }
 }
 
 @Composable
@@ -320,6 +361,38 @@ fun AddFriends(myViewModel: MyViewModel) {
 
 @Composable
 fun Requests(myViewModel: MyViewModel) {
+  val context = LocalContext.current;
+  val requestList = myViewModel.requestList
+  var previousRequestCount by remember { mutableStateOf(requestList.size)}
+
+  val notificationPermissionLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.RequestPermission(),
+    onResult = { isGranted ->
+      if (isGranted) {
+        showNotification(context, "You have a new friend request from ${requestList.lastOrNull()?.username ?: "someone"}")
+      }
+    }
+  )
+
+//   Check for new friend requests and show notification
+  LaunchedEffect(requestList.size) {
+    if (requestList.size > previousRequestCount) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+          ) != PackageManager.PERMISSION_GRANTED
+        ) {
+          notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+          showNotification(context, "You have a new friend request from ${requestList.lastOrNull()?.username ?: "someone"}")
+        }
+      } else {
+        showNotification(context, "You have a new friend request from ${requestList.lastOrNull()?.username ?: "someone"}")
+      }
+    }
+    previousRequestCount = requestList.size
+  }
 
   Column(
     verticalArrangement = Arrangement.spacedBy(16.dp)

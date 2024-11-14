@@ -34,52 +34,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import com.google.maps.android.PolyUtil
 import io.github.jan.supabase.auth.auth
-
-@Serializable
-data class GeocodeResponse(
-    val results: List<Result>,
-    val status: String
-)
-
-@Serializable
-data class Result(
-    val place_id: String,
-    val formatted_address: String
-)
-
-@Serializable
-data class DirectionsResponse(
-    val routes: List<Route>
-)
-
-@Serializable
-data class Route(
-    val legs: List<Leg>,
-    val overview_polyline: Polyline
-)
-
-@Serializable
-data class Leg(
-    val distance: Distance,
-    val duration: Duration
-)
-
-@Serializable
-data class Distance(
-    val text: String,
-    val value: Int
-)
-
-@Serializable
-data class Duration(
-    val text: String,
-    val value: Int
-)
-
-@Serializable
-data class Polyline(
-    val points: String
-)
+import kotlinx.coroutines.delay
 
 class MyViewModel : ViewModel() {
 
@@ -107,7 +62,6 @@ class MyViewModel : ViewModel() {
     var signedIn by mutableStateOf<Boolean>(false) // temp variable to simulate auth
     var id = 2L // sample logged in account
 
-
     // user
     var displayName by mutableStateOf("")
     var username by mutableStateOf("")
@@ -127,6 +81,7 @@ class MyViewModel : ViewModel() {
     var selectedLocation by mutableStateOf<LatLng?>(null)
     var routePoints by mutableStateOf<List<LatLng>?>(null)
     var mode by mutableStateOf<String>("walking")
+    var places by mutableStateOf<List<Place>>(emptyList())
 
     // Start of Map Functions
 
@@ -258,6 +213,45 @@ class MyViewModel : ViewModel() {
 
     // Start of Database Functions
 
+    fun fetchPlaces() {
+        viewModelScope.launch {
+            try {
+                places = supabase.from("places").select() {
+                    filter {
+                        eq("owner_id", id)
+                    }
+                }.decodeList<Place>()
+            } catch (e: Exception) {
+                Log.e("Supabase fetchPlaces()", "Error: ${e.message}")
+            }
+        }
+    }
+
+    fun setPlace(name:String, coords: LatLng, radius: Double) {
+        viewModelScope.launch {
+            try {
+                val newPlace = Place(name, coords.latitude, coords.longitude, radius, id)
+                supabase.from("places").insert(newPlace)
+            } catch (e: Exception) {
+                Log.e("Supabase setPlace()", "Error: ${e.message}")
+            }
+        }
+    }
+
+    fun removePlace(id: Long) {
+        viewModelScope.launch {
+            try {
+                supabase.from("places").delete() {
+                    filter {
+                        eq("id", id)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Supabase removePlace()", "Error: ${e.message}")
+            }
+        }
+    }
+
     fun fetchFriends() {
         viewModelScope.launch {
             try {
@@ -268,33 +262,33 @@ class MyViewModel : ViewModel() {
                 val tempFriends = mutableListOf<User>()
                 val tempRequesters = mutableListOf<User>()
                 for (friendship in friendshipRes) {
-                    if (friendship.accepted && friendship.receiverId == id) {
+                    if (friendship.accepted && friendship.receiverId == uid) {
                         // Add requesterId if receiverId is 2
                         val friendId = friendship.requesterId
                         val tempFriend = userRes
                             .select() {
                                 filter {
-                                    eq("id", friendId)
+                                    eq("uid", friendId)
                                 }
                             }.decodeSingle<User>()
                         tempFriends.add(tempFriend)
-                    } else if (friendship.accepted && friendship.requesterId == id) {
-                        // Add receiverId if requesterId is 2
+                    } else if (friendship.accepted && friendship.requesterId == uid) {
+                        // Add receiverId if requesterId is the current user
                         val friendId = friendship.receiverId
                         val tempFriend = userRes
                             .select() {
                                 filter {
-                                    eq("id", friendId)
+                                    eq("uid", friendId)
                                 }
                             }.decodeSingle<User>()
                         tempFriends.add(tempFriend)
-                    } else if (!friendship.accepted && friendship.receiverId == id) {
+                    } else if (!friendship.accepted && friendship.receiverId == uid) {
                         // Add requester if receiverId is 2
                         val friendId = friendship.requesterId
                         val tempFriend = userRes
                             .select() {
                                 filter {
-                                    eq("id", friendId)
+                                    eq("uid", friendId)
                                 }
                             }.decodeSingle<User>()
                         tempRequesters.add(tempFriend)
@@ -333,7 +327,7 @@ class MyViewModel : ViewModel() {
 
 
                 fetchFriends()
-
+                fetchPlaces()
 
                 Log.d("SupabaseConnection", "Friends fetched: $friendsList")
             } catch (e: Exception) {
@@ -349,7 +343,7 @@ class MyViewModel : ViewModel() {
                    set("display_name", newDisplayName)
                }){
                    filter {
-                       eq("id", id)
+                       eq("uid", uid)
                    }
                }
 
@@ -367,7 +361,7 @@ class MyViewModel : ViewModel() {
                     set("email", newEmail)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
 
@@ -385,7 +379,7 @@ class MyViewModel : ViewModel() {
                     set("username", newUsername)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
 
@@ -403,7 +397,7 @@ class MyViewModel : ViewModel() {
                     set("password", newPassword)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
 
@@ -426,7 +420,7 @@ class MyViewModel : ViewModel() {
                     set("longitude", longitude)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
                 userLongitude = longitude
@@ -451,7 +445,7 @@ class MyViewModel : ViewModel() {
                         set("noti_messages", false)
                     }){
                         filter {
-                            eq("id", id)
+                            eq("uid", uid)
                         }
                     }
                     notiStatus = false
@@ -464,7 +458,7 @@ class MyViewModel : ViewModel() {
                         set("status", newStatus.id)
                     }){
                         filter {
-                            eq("id", id)
+                            eq("uid", uid)
                         }
                     }
                 }
@@ -485,8 +479,8 @@ class MyViewModel : ViewModel() {
                 }.decodeSingle<User>()
                 val oppositeCheck = supabase.from("friendship").select() { // check if opposite request exists
                     filter {
-                        eq("requester_id", receiver.id)
-                        eq("receiver_id", id)
+                        eq("requester_id", receiver.uid)
+                        eq("receiver_id", uid)
                     }
                 }.decodeList<Friendship>()
                 if (oppositeCheck.isNotEmpty() && !oppositeCheck[0].accepted) { // if the opposite request exists just become friends
@@ -495,14 +489,14 @@ class MyViewModel : ViewModel() {
                         set("accepted", true)
                     }) {
                         filter {
-                            eq("requester_id", receiver.id)
-                            eq("receiver_id", id)
+                            eq("requester_id", receiver.uid)
+                            eq("receiver_id", uid)
                         }
                     }
                     fetchFriends()
-                } else if (oppositeCheck.isEmpty() && receiver.id != id) { // if not create a new friend request
-                    val newRequest = Friendship(createdAt = dateFormat.format(Date()), requesterId = id,
-                        receiverId = receiver.id, accepted = false)
+                } else if (oppositeCheck.isEmpty() && receiver.uid != uid) { // if not create a new friend request
+                    val newRequest = Friendship(createdAt = dateFormat.format(Date()), requesterId = uid,
+                        receiverId = receiver.uid, accepted = false)
                     supabase.from("friendship").insert(newRequest)
                     fetchFriends()
                 }
@@ -524,12 +518,12 @@ class MyViewModel : ViewModel() {
                     filter {
                         or {
                             and {
-                                eq("requester_id", friendToRemove.id);
-                                eq("receiver_id", id);
+                                eq("requester_id", friendToRemove.uid);
+                                eq("receiver_id", uid);
                             }
                             and {
-                                eq("requester_id", id);
-                                eq("receiver_id", friendToRemove.id);
+                                eq("requester_id", uid);
+                                eq("receiver_id", friendToRemove.uid);
                             }
                         }
                     }
@@ -584,7 +578,7 @@ class MyViewModel : ViewModel() {
                     set("noti_status", setTo)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
                 notiStatus = setTo
@@ -602,7 +596,7 @@ class MyViewModel : ViewModel() {
                     set("noti_nearby", setTo)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
                 notiNearby = setTo
@@ -619,7 +613,7 @@ class MyViewModel : ViewModel() {
                     set("noti_messages", setTo)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
                 notiMessages = setTo
