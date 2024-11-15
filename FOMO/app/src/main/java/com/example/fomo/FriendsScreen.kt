@@ -71,6 +71,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.fomo.models.User
 import io.ktor.client.request.request
+import coil.compose.rememberAsyncImagePainter
+import android.widget.Toast
 
 
 class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
@@ -212,6 +214,7 @@ fun showNotification(context: Context, message: String) {
 
 @Composable
 fun FriendsList(myViewModel: MyViewModel) {
+  val context = LocalContext.current
   var isLoaded by remember { mutableStateOf<Boolean>(false) }
   var expanded = remember { mutableStateMapOf<String, Boolean>() }
   var showRemoveFriendConfirmation by remember { mutableStateOf<Boolean>(false) }
@@ -232,7 +235,13 @@ fun FriendsList(myViewModel: MyViewModel) {
 
   fun onConfirmationRequest() {
     showRemoveFriendConfirmation = false
-    myViewModel.removeFriend(selectedFriend!!.username)
+    myViewModel.removeFriend(selectedFriend!!.username) { success ->
+      if (success) {
+        Toast.makeText(context, "Friend Removed", Toast.LENGTH_SHORT).show()
+      } else {
+        Toast.makeText(context, "Error: Friend Remove Failed", Toast.LENGTH_SHORT).show()
+      }
+    }
   }
 
   if (showRemoveFriendConfirmation && selectedFriend != null) {
@@ -261,7 +270,8 @@ fun FriendsList(myViewModel: MyViewModel) {
         modifier = Modifier.height(75.dp)
       ) {
         Image(
-          painter = painterResource(id = R.drawable.placeholder_pfp),
+          painter = rememberAsyncImagePainter(myViewModel.getImgUrl(friend.uid),
+            error = painterResource(id = R.drawable.default_pfp) ),
           contentDescription = "Profile Picture",
           contentScale = ContentScale.Crop,
           modifier = Modifier
@@ -323,6 +333,7 @@ fun FriendsList(myViewModel: MyViewModel) {
 
 @Composable
 fun AddFriends(myViewModel: MyViewModel) {
+  val context = LocalContext.current
   var text by remember { mutableStateOf("") }
 
   Row(
@@ -347,7 +358,13 @@ fun AddFriends(myViewModel: MyViewModel) {
 
     TextButton(
       onClick = {
-        myViewModel.createRequest(text)
+        myViewModel.createRequest(text) { success ->
+          if (success) {
+            Toast.makeText(context, "Sent Friend Request", Toast.LENGTH_SHORT).show()
+          } else {
+            Toast.makeText(context, "Error: User Not Found or Valid", Toast.LENGTH_SHORT).show()
+          }
+        }
       },
       modifier = Modifier
         .padding(top = 8.dp)
@@ -406,7 +423,8 @@ fun Requests(myViewModel: MyViewModel) {
           .fillMaxWidth()
       ) {
         Image(
-          painter = painterResource(id = R.drawable.placeholder_pfp),
+          painter = rememberAsyncImagePainter(myViewModel.getImgUrl(request.uid),
+            error = painterResource(id = R.drawable.default_pfp) ),
           contentDescription = "Profile Picture",
           contentScale = ContentScale.Crop,
           modifier = Modifier
@@ -437,7 +455,13 @@ fun Requests(myViewModel: MyViewModel) {
             imageVector = Icons.Default.Check, contentDescription = "Check Icon",
             modifier = Modifier.clickable (
               onClick = {
-                myViewModel.acceptRequest(request.uid, myViewModel.uid)
+                myViewModel.acceptRequest(request.uid, myViewModel.uid) { success ->
+                  if (success) {
+                    Toast.makeText(context, "Friend Request Accepted", Toast.LENGTH_SHORT).show()
+                  } else {
+                    Toast.makeText(context, "Error: Friend Request Accept Failed", Toast.LENGTH_SHORT).show()
+                  }
+                }
               }
             )
           )
@@ -445,7 +469,13 @@ fun Requests(myViewModel: MyViewModel) {
             imageVector = Icons.Default.Close, contentDescription = "X Icon",
             modifier = Modifier.clickable (
               onClick = {
-                myViewModel.declineRequest(request.uid, myViewModel.uid)
+                myViewModel.declineRequest(request.uid, myViewModel.uid) { success ->
+                  if (success) {
+                    Toast.makeText(context, "Friend Request Declined", Toast.LENGTH_SHORT).show()
+                  } else {
+                    Toast.makeText(context, "Error: Friend Request Decline Failed", Toast.LENGTH_SHORT).show()
+                  }
+                }
               }
             )
           )

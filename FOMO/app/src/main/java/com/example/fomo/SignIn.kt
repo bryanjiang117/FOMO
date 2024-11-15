@@ -51,7 +51,7 @@ class SignIn(private val myViewModel: MyViewModel) : Screen {
   @OptIn(ExperimentalMaterial3Api::class)
   @Composable
   override fun Content() {
-    var username by remember{ mutableStateOf<String>("") }
+    var email by remember{ mutableStateOf<String>("") }
     var password by remember{ mutableStateOf<String>("") }
     val navigator = LocalNavigator.current
     var showError by remember {mutableStateOf(false) }
@@ -82,9 +82,9 @@ class SignIn(private val myViewModel: MyViewModel) : Screen {
           modifier = Modifier.fillMaxWidth()
         ) {
           TextField(
-            value = username,
-            onValueChange = { username = it },
-            placeholder = { Text("Username/Email") },
+            value = email,
+            onValueChange = { email = it },
+            placeholder = { Text("Email") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
               keyboardType = KeyboardType.Text,
@@ -149,7 +149,7 @@ class SignIn(private val myViewModel: MyViewModel) : Screen {
           onClick = {
             // Sign in function here!
 
-            myViewModel.signIn(username, password) { success ->
+            myViewModel.signIn(email, password) { success ->
               showError = !success
               if (success) {
                 // Navigate to the next screen

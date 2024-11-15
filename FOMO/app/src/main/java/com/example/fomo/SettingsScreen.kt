@@ -100,76 +100,11 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
           checked = isNotificationSharingEnabled,
           onCheckedChange = { isEnabled ->
             isNotificationSharingEnabled = isEnabled
-            //openSetting(context)
-            if (!isEnabled) {
-              myViewModel.updateNotiStatus(false)
-              myViewModel.updateNotiMessages(false)
-              myViewModel.updateNotiNearby(false)
-            }
 
           }
         )
       }
 
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
-      ) {
-        Text(text = "Friend's Status Update",
-          modifier = Modifier.weight(1f) // Push the text to the left
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // Friend's Status Update notification toggle switch
-        Switch(
-          checked = myViewModel.notiStatus,
-          onCheckedChange = { isEnabled ->
-            myViewModel.updateNotiStatus(isEnabled)
-            isNotificationSharingEnabled = true
-          }
-        )
-      }
-
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
-      ) {
-        Text(text = "Nearby Friends",
-          modifier = Modifier.weight(1f) // Push the text to the left
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // Nearby Friends notification toggle switch
-        Switch(
-          checked = myViewModel.notiNearby,
-          onCheckedChange = { isEnabled ->
-            myViewModel.updateNotiNearby(isEnabled)
-            isNotificationSharingEnabled = true
-          }
-        )
-      }
-
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
-      ) {
-        Text(text = "Messages",
-          modifier = Modifier.weight(1f) // Push the text to the left
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // Messages notification toggle switch
-        Switch(
-          checked = myViewModel.notiMessages,
-          onCheckedChange = { isEnabled ->
-            myViewModel.updateNotiMessages(isEnabled)
-            isNotificationSharingEnabled = true
-          }
-        )
-      }
 
       Button(
         onClick = {
