@@ -172,16 +172,16 @@ class MainActivity : ComponentActivity() {
 
   private fun updateData() {
     lifecycleScope.launch {
-//      myViewModel.signedIn.collect { isSignedIn ->
-//        if (isSignedIn) {
-//          while (isActive) {
-//            myViewModel.fetchFriends()
-//            myViewModel.fetchPlaces()
-//            LocationHelper.getPreciseLocation(this@MainActivity, myViewModel)
-//            delay(20000)
-//          }
-//        }
-//      }
+      myViewModel.signedIn.collect { isSignedIn ->
+        if (isSignedIn) {
+          while (isActive) {
+            myViewModel.fetchFriends()
+            myViewModel.fetchPlaces()
+            LocationHelper.getPreciseLocation(this@MainActivity, myViewModel)
+            delay(20000)
+          }
+        }
+      }
     }
   }
 
