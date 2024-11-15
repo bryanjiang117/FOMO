@@ -1,5 +1,6 @@
 package com.example.fomo.models
 
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -17,6 +18,8 @@ import com.example.fomo.BuildConfig
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.storage.Storage
+import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch
@@ -37,6 +40,8 @@ import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import java.io.InputStream
+import android.content.ContentResolver
 
 class MyViewModel : ViewModel() {
 
@@ -51,6 +56,7 @@ class MyViewModel : ViewModel() {
     ) {
         install(Postgrest)
         install(Auth)
+        install(Storage)
     }
 
     private val ktorClient = HttpClient(CIO) {
@@ -70,18 +76,13 @@ class MyViewModel : ViewModel() {
     // end of signed in stateflow
 
 
-
-    var id = 2L // sample logged in account
-
     // user
     var displayName by mutableStateOf("")
     var username by mutableStateOf("")
+    var imageUri by mutableStateOf<Uri?>(null)
     var email by mutableStateOf("")
     var uid by mutableStateOf("")
     private var password by mutableStateOf("")
-    var notiNearby by mutableStateOf(false)
-    var notiStatus by mutableStateOf(false)
-    var notiMessages by mutableStateOf(false)
     var userLongitude by mutableDoubleStateOf(0.0)
     var userLatitude by mutableDoubleStateOf(0.0)
     var center by mutableStateOf(LatLng(43.4723, -80.5449))
@@ -181,10 +182,7 @@ class MyViewModel : ViewModel() {
                         password = password,
                         latitude = 0.0,
                         longitude = 0.0,
-                        status_id = 2,
-                        notiMessages = false,
-                        notiNearby = false,
-                        notiStatus = false
+                        status_id = 1,
                     ))
 
                     Log.d("SupabaseAuth", "User signed up created and added to DB: $email")
@@ -246,12 +244,17 @@ class MyViewModel : ViewModel() {
 
     // Start of Database Functions
 
+    fun getImgUrl(userID: String): String {
+        val supabaseUrl = "https://vwapghztewutqqmzaoib.supabase.co"
+        return "$supabaseUrl/storage/v1/object/public/profile-pictures/$userID.jpg"
+    }
+
     fun fetchPlaces() {
         viewModelScope.launch {
             try {
                 places = supabase.from("places").select() {
                     filter {
-                        eq("owner_id", id)
+                        eq("owner_id", uid)
                     }
                 }.decodeList<Place>()
                 Log.d("Supabase fetchPlaces()", "Places fetched")
@@ -264,7 +267,7 @@ class MyViewModel : ViewModel() {
     fun setPlace(name:String, coords: LatLng, radius: Double) {
         viewModelScope.launch {
             try {
-                val newPlace = Place(name, coords.latitude, coords.longitude, radius, id)
+                val newPlace = Place(name, coords.latitude, coords.longitude, radius, uid)
                 supabase.from("places").insert(newPlace)
             } catch (e: Exception) {
                 Log.e("Supabase setPlace()", "Error: ${e.message}")
@@ -341,6 +344,7 @@ class MyViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val statusRes = supabase.from("statuses").select().decodeList<Status>()
+                val picBucket = supabase.storage.from("profile-pictures")
 
                 val me = supabase.from("users").select() {
                     filter {
@@ -353,11 +357,8 @@ class MyViewModel : ViewModel() {
                 username = me.username
                 email = me.email
                 password = me.password
-                notiNearby = me.notiNearby
-                notiStatus = me.notiStatus
-                notiMessages = me.notiMessages
                 status = statusRes.filter {it.id == me.status_id}[0]
-
+                imageUri = Uri.parse(getImgUrl(uid))
 
                 fetchFriends()
                 fetchPlaces()
@@ -369,7 +370,7 @@ class MyViewModel : ViewModel() {
         }
     }
 
-    fun updateDisplayName(newDisplayName: String){
+    fun updateDisplayName(newDisplayName: String, onResult: (Boolean) -> Unit){
         viewModelScope.launch {
             try {
                supabase.from("users").update({
@@ -381,13 +382,40 @@ class MyViewModel : ViewModel() {
                }
 
                 displayName = newDisplayName
+                onResult(true)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                onResult(false)
             }
         }
     }
 
-    fun updateEmail(newEmail: String){
+    fun updateProfilePicture(contentResolver: ContentResolver, newUri: Uri?, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                if (newUri != null) {
+                    val picBucket = supabase.storage.from("profile-pictures")
+                    val inputStream: InputStream? = contentResolver.openInputStream(newUri)
+                    val response = picBucket.upload("$uid.jpg", inputStream?.readBytes()!!) {
+                        upsert = true
+                    }
+                    imageUri = newUri
+                    Log.d("uploadImage", "Uploaded as ${response.path}")
+                    onResult(true)
+                } else {
+                    Log.e("uploadImage", "Image Upload Error")
+                    onResult(false)
+                }
+            } catch (e: Exception) {
+                Log.e("uploadImage", "Image Upload Error: ${e.message}")
+                onResult(false)
+            }
+        }
+
+    }
+
+
+    fun updateEmail(newEmail: String, onResult: (Boolean) -> Unit){
         viewModelScope.launch {
             try {
                 supabase.from("users").update({
@@ -399,13 +427,15 @@ class MyViewModel : ViewModel() {
                 }
 
                 email = newEmail
+                onResult(true)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                onResult(false)
             }
         }
     }
 
-    fun updateUsername(newUsername: String){
+    fun updateUsername(newUsername: String, onResult: (Boolean) -> Unit){
         viewModelScope.launch {
             try {
                 supabase.from("users").update({
@@ -417,13 +447,15 @@ class MyViewModel : ViewModel() {
                 }
 
                 username = newUsername
+                onResult(true)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                onResult(false)
             }
         }
     }
 
-    fun updatePassword(newPassword: String){
+    fun updatePassword(newPassword: String, onResult: (Boolean) -> Unit){
         viewModelScope.launch {
             try {
                 supabase.from("users").update({
@@ -435,8 +467,10 @@ class MyViewModel : ViewModel() {
                 }
 
                 password = newPassword
+                onResult(true)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                onResult(false)
             }
         }
     }
@@ -471,39 +505,23 @@ class MyViewModel : ViewModel() {
     fun updateStatus(newStatus: Status) {
         viewModelScope.launch {
             try {
-                if (newStatus.id == 1L) { // if new status is do not disturb
-                    supabase.from("users").update({
-                        set("status", newStatus.id)
-                        set("noti_nearby", false)
-                        set("noti_status", false)
-                        set("noti_messages", false)
-                    }){
-                        filter {
-                            eq("uid", uid)
-                        }
-                    }
-                    notiStatus = false
-                    notiNearby = false
-                    notiMessages = false
-                } else if (newStatus.description == "On My Way") {
-
-                } else {
-                    supabase.from("users").update({
-                        set("status", newStatus.id)
-                    }){
-                        filter {
-                            eq("uid", uid)
-                        }
+                supabase.from("users").update({
+                    set("status", newStatus.id)
+                }){
+                    filter {
+                        eq("uid", uid)
                     }
                 }
+
                 status = newStatus
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
+
             }
         }
     }
 
-    fun createRequest(username: String) {
+    fun createRequest(username: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
                 val receiver = supabase.from("users").select() { // Find the receiver
@@ -528,19 +546,24 @@ class MyViewModel : ViewModel() {
                         }
                     }
                     fetchFriends()
+                    onResult(true)
                 } else if (oppositeCheck.isEmpty() && receiver.uid != uid) { // if not create a new friend request
                     val newRequest = Friendship(createdAt = dateFormat.format(Date()), requesterId = uid,
                         receiverId = receiver.uid, accepted = false)
                     supabase.from("friendship").insert(newRequest)
                     fetchFriends()
+                    onResult(true)
+                } else {
+                    onResult(false)
                 }
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                onResult(false)
             }
         }
     }
 
-    fun removeFriend(username: String) {
+    fun removeFriend(username: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
                 val friendToRemove = supabase.from("users").select() {
@@ -563,13 +586,15 @@ class MyViewModel : ViewModel() {
                     }
                 }
                 fetchFriends()
+                onResult(true)
             } catch(e: Exception) {
-                Log.e("SupabaseConnection", "DB Error: ${e.message}");
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                onResult(false)
             }
         }
     }
 
-    fun acceptRequest(requester: String, receiver: String) {
+    fun acceptRequest(requester: String, receiver: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
                 supabase.from("friendship").update({
@@ -582,13 +607,15 @@ class MyViewModel : ViewModel() {
                     }
                 }
                 fetchFriends()
+                onResult(true)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                onResult(false)
             }
         }
     }
 
-    fun declineRequest(requester: String, receiver: String) {
+    fun declineRequest(requester: String, receiver: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
                 supabase.from("friendship").delete(){
@@ -598,64 +625,15 @@ class MyViewModel : ViewModel() {
                     }
                 }
                 fetchFriends()
+                onResult(true)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                onResult(false)
             }
         }
 
     }
 
-    fun updateNotiStatus(setTo: Boolean) {
-        viewModelScope.launch {
-            try {
-                supabase.from("users").update({
-                    set("noti_status", setTo)
-                }){
-                    filter {
-                        eq("uid", uid)
-                    }
-                }
-                notiStatus = setTo
-            } catch (e: Exception) {
-                Log.e("SupabaseConnection", "DB Error: ${e.message}")
-            }
-        }
-
-    }
-
-    fun updateNotiNearby(setTo: Boolean) {
-        viewModelScope.launch {
-            try {
-                supabase.from("users").update({
-                    set("noti_nearby", setTo)
-                }){
-                    filter {
-                        eq("uid", uid)
-                    }
-                }
-                notiNearby = setTo
-            } catch (e: Exception) {
-                Log.e("SupabaseConnection", "DB Error: ${e.message}")
-            }
-        }
-    }
-
-    fun updateNotiMessages(setTo: Boolean) {
-        viewModelScope.launch {
-            try {
-                supabase.from("users").update({
-                    set("noti_messages", setTo)
-                }){
-                    filter {
-                        eq("uid", uid)
-                    }
-                }
-                notiMessages = setTo
-            } catch (e: Exception) {
-                Log.e("SupabaseConnection", "DB Error: ${e.message}")
-            }
-        }
-    }
 
     // End of Database Functions
 

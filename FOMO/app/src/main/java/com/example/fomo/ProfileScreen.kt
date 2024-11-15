@@ -1,11 +1,15 @@
 package com.example.fomo
 
+import android.net.Uri
 import android.graphics.Paint.Align
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
@@ -21,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.PopupProperties
 import cafe.adriel.voyager.core.screen.Screen
+import coil.compose.rememberAsyncImagePainter
 import com.example.fomo.models.MyViewModel
 
 class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
@@ -30,6 +36,20 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
     var toChange by remember { mutableStateOf("null") } // what to change
     var droppedDown by remember { mutableStateOf(false) } // display dropdown
     var newValue by remember { mutableStateOf("") } // updated name state
+    val context = LocalContext.current
+    val contentResolver = context.contentResolver
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+      contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+      myViewModel.updateProfilePicture(contentResolver, uri) { success ->
+        if (success) {
+          Toast.makeText(context, "Profile Picture Updated!", Toast.LENGTH_SHORT).show()
+        } else {
+          Toast.makeText(context, "Error: Invalid Picture", Toast.LENGTH_SHORT).show()
+        }
+      }
+    }
 
     Column(
       modifier = Modifier
@@ -50,14 +70,23 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
           .fillMaxWidth()
           .padding(16.dp)
       ){
-        Image(
-          painter = painterResource(id = R.drawable.placeholder_pfp),
-          contentDescription = "Profile Picture",
-          contentScale = ContentScale.Crop,
+        Button(
+          contentPadding = PaddingValues(0.dp),
           modifier = Modifier
-            .size(125.dp)
-            .clip(CircleShape)
-        )
+          .size(125.dp)
+          .clip(CircleShape),
+          onClick = {
+            imagePickerLauncher.launch("image/*")
+          }
+        ) {
+          Image(
+            painter = rememberAsyncImagePainter(myViewModel.imageUri,
+              error = painterResource(id = R.drawable.default_pfp) ),
+            contentDescription = "Profile Picture",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+          )
+        }
 
       }
 
@@ -142,6 +171,7 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
           onClick = {
             showDialog = true
             toChange = "Password"
+            newValue = ""
           }
         ) {
           Text("Change", color = MaterialTheme.colorScheme.primary)
@@ -232,13 +262,41 @@ class ProfileScreen(private val myViewModel: MyViewModel) : Screen {
                 }
                 TextButton(onClick = {  //save button
                   if ( toChange == "Display Name") {
-                    myViewModel.updateDisplayName(newValue)
+                    myViewModel.updateDisplayName(newValue) { success ->
+                      if (success) {
+                        Toast.makeText(context, "Display Name Updated", Toast.LENGTH_SHORT).show()
+                      } else {
+                        Toast.makeText(context, "Error: Input too long (above 20 characters)",
+                          Toast.LENGTH_SHORT).show()
+                      }
+                    }
                   } else if ( toChange == "Email") {
-                    myViewModel.updateEmail(newValue)
+                    myViewModel.updateEmail(newValue) { success ->
+                      if (success) {
+                        Toast.makeText(context, "Email Updated!", Toast.LENGTH_SHORT).show()
+                      } else {
+                        Toast.makeText(context, "Error: Input too long (above 200 characters) or email already exists",
+                          Toast.LENGTH_SHORT).show()
+                      }
+                    }
                   } else if ( toChange == "Username") {
-                    myViewModel.updateUsername(newValue)
+                    myViewModel.updateUsername(newValue) { success ->
+                      if (success) {
+                        Toast.makeText(context, "Username Updated!", Toast.LENGTH_SHORT).show()
+                      } else {
+                        Toast.makeText(context, "Error: Input too long (above 20 characters) or username already exists",
+                          Toast.LENGTH_SHORT).show()
+                      }
+                    }
                   } else {
-                    myViewModel.updatePassword(newValue)
+                    myViewModel.updatePassword(newValue) { success ->
+                      if (success) {
+                        Toast.makeText(context, "Password Updated!", Toast.LENGTH_SHORT).show()
+                      } else {
+                        Toast.makeText(context, "Error: Input too long (above 20 characters) or too short (below 8 characters)",
+                          Toast.LENGTH_SHORT).show()
+                      }
+                    }
                   }
                   showDialog = false
                   newValue = ""
