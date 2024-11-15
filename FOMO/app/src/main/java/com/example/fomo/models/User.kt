@@ -13,8 +13,9 @@ data class User(
   @SerialName("password") val password: String,                 // Password (consider encrypting if used in production)
   @SerialName("latitude") val latitude: Double,                 // User's latitude location
   @SerialName("longitude") val longitude: Double,               // User's longitude location
-  @SerialName("status") val status_id: Long,                        // Status ID
+  @SerialName("status") val status_id: Long,                    // Status ID
   @SerialName("noti_nearby") val notiNearby: Boolean,           // Notification setting for nearby events
   @SerialName("noti_status") val notiStatus: Boolean,           // Notification setting for status updates
-  @SerialName("noti_messages") val notiMessages: Boolean         // Notification setting for messages
+  @SerialName("noti_messages") val notiMessages: Boolean,       // Notification setting for messages
+  @SerialName("route") val route: String? = null,
 )

@@ -51,6 +51,10 @@ import com.google.maps.android.compose.rememberMarkerState
 import com.google.maps.android.compose.Circle
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.MarkerState
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 
 
 class MapScreen(private val myViewModel: MyViewModel) : Screen {
@@ -89,10 +93,10 @@ fun CustomMapMarker(
   }
 }
 
+@OptIn(InternalSerializationApi::class)
 @Composable
 fun Map(myViewModel: MyViewModel) {
   var isMapLoaded by remember { mutableStateOf(false) }
-  val friendList = myViewModel.friendsList
   val cameraPositionState = rememberCameraPositionState {
     position = CameraPosition.fromLatLngZoom(myViewModel.center, 15f)
   }
@@ -141,7 +145,7 @@ fun Map(myViewModel: MyViewModel) {
         )
 
         // display friends
-        for(friend in friendList) {
+        for(friend in myViewModel.friendsList) {
           val friendLocation = LatLng(friend.latitude, friend.longitude)
           val friendStatus = myViewModel.statusList.filter {it.id == friend.status_id}[0]
           val friendMarkerState = rememberMarkerState(
@@ -155,9 +159,18 @@ fun Map(myViewModel: MyViewModel) {
             title = friend.displayName,
             snippet = "${friendStatus.emoji} ${friendStatus.description}",
           )
+          // display friends' on my way routes
+          if (friend.route != null) {
+            val routePoints = Json.decodeFromString(ListSerializer(LatLng::class.serializer()), friend.route)
+            Polyline(
+              points = routePoints,
+              color = Color.Blue,
+              width = 10f,
+            )
+          }
         }
 
-        // On my way marker + route
+        // display on my way route
         if (myViewModel.selectedLocation != null && myViewModel.status.description == "On my way") {
           Marker(
             state = markerState,

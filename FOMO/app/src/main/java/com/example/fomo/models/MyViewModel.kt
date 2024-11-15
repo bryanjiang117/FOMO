@@ -37,6 +37,9 @@ import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.serializer
 
 class MyViewModel : ViewModel() {
 
@@ -105,6 +108,7 @@ class MyViewModel : ViewModel() {
         viewModelScope.launch {
             selectedLocation = coords
             routePoints = getRoute(center, selectedLocation!!, mode)
+            setRoute(routePoints!!)
             updateStatus(statusList.filter{status -> status.description == "On my way"}[0])
         }
     }
@@ -123,7 +127,7 @@ class MyViewModel : ViewModel() {
             val place_id = response.results[0].place_id
             return place_id
         } catch(e: Exception) {
-            "Request failed: ${e.message}"
+            Log.e("Supabase getPlaceId()", "Error: ${e.message}")
             return null
         }
     }
@@ -145,8 +149,41 @@ class MyViewModel : ViewModel() {
             val route = PolyUtil.decode(encodedRoute)
             return route
         } catch(e: Exception) {
-            "Request failed: ${e.message}"
+            Log.e("Supabase getRoute()","Error: ${e.message}")
             return null
+        }
+    }
+
+    @OptIn(InternalSerializationApi::class)
+    fun setRoute(route: List<LatLng>) {
+        viewModelScope.launch {
+            try {
+                supabase.from("users").update({
+                    set("route", Json.encodeToString(ListSerializer(LatLng::class.serializer()), route))
+                }) {
+                    filter {
+                        eq("uid", uid)
+                    }
+                }
+            } catch(e: Exception) {
+                Log.e("Supabase setRoute()", "Error: ${e.message}")
+            }
+        }
+    }
+
+    fun removeRoute() {
+        viewModelScope.launch {
+            try {
+                supabase.from("users").update({
+                    set("route", null as String?)
+                }) {
+                    filter {
+                        eq("uid", uid)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Supabase removeRoute()", "Error: ${e.message}")
+            }
         }
     }
 
@@ -485,9 +522,10 @@ class MyViewModel : ViewModel() {
                     notiStatus = false
                     notiNearby = false
                     notiMessages = false
-                } else if (newStatus.description == "On My Way") {
-
                 } else {
+                    if (newStatus.description != "On My Way") {
+                        removeRoute()
+                    }
                     supabase.from("users").update({
                         set("status", newStatus.id)
                     }){
