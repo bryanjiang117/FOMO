@@ -5,8 +5,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class User(
-
-  @SerialName("id") val id: Long,                                // Primary key for the user
   @SerialName("uid") val uid: String,
   @SerialName("created_at") val createdAt: String,              // Timestamp for when the user was created
   @SerialName("email") val email: String,                       // User's email address

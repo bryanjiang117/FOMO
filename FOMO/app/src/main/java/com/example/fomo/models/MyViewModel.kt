@@ -35,6 +35,8 @@ import kotlinx.serialization.json.Json
 import com.google.maps.android.PolyUtil
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class MyViewModel : ViewModel() {
 
@@ -50,7 +52,6 @@ class MyViewModel : ViewModel() {
         install(Postgrest)
         install(Auth)
     }
-    private val auth = supabase.auth
 
     private val ktorClient = HttpClient(CIO) {
         install(ContentNegotiation) {
@@ -58,8 +59,18 @@ class MyViewModel : ViewModel() {
         }
     }
 
-    // temp
-    var signedIn by mutableStateOf<Boolean>(false) // temp variable to simulate auth
+    // start of signed in stateflow
+    private val _signedInFlow = MutableStateFlow(false)
+    val signedIn: StateFlow<Boolean> = _signedInFlow
+
+    private fun setSignedInState(isSignedIn: Boolean) {
+        _signedInFlow.value = isSignedIn
+    }
+
+    // end of signed in stateflow
+
+
+
     var id = 2L // sample logged in account
 
     // user
@@ -152,11 +163,31 @@ class MyViewModel : ViewModel() {
                     this.password = password
                 }
 
+
                 if (user != null) {
-                    Log.d("SupabaseAuth", "User created: ${user.email}")
+                    // this line should not run for now
+                    Log.d("SupabaseAuth", "User created with email confirmation: $email")
                     onResult(true)
                 } else {
-                    Log.d("SupabaseAuth", "User created and logged in automatically")
+                    val userObject = supabase.auth.retrieveUserForCurrentSession(updateSession = true)
+                    val users = supabase.from("users")
+
+                    users.insert(User(
+                        uid = userObject.id,
+                        displayName = email,
+                        createdAt = dateFormat.format(Date()),
+                        email = email,
+                        username = email,
+                        password = password,
+                        latitude = 0.0,
+                        longitude = 0.0,
+                        status_id = 2,
+                        notiMessages = false,
+                        notiNearby = false,
+                        notiStatus = false
+                    ))
+
+                    Log.d("SupabaseAuth", "User signed up created and added to DB: $email")
                     onResult(true)
                 }
             } catch (e: Exception) {
@@ -176,14 +207,16 @@ class MyViewModel : ViewModel() {
                 val session = supabase.auth.currentSessionOrNull()
                 val user = supabase.auth.retrieveUserForCurrentSession(updateSession = true)
 
-
+                // initialize sign-in state and establish userid
                 if (session != null) {
                     Log.d("SupabaseAuth", "Session active, userid ${user.id}")
                     uid = user.id
                     onResult(true)
+                    setSignedInState(true)
                 } else {
                     Log.d("SupabaseAuth", "Sign-in credentials invalid")
                     onResult(false)
+                    setSignedInState(false)
                 }
 
             } catch (e: Exception) {
@@ -199,7 +232,7 @@ class MyViewModel : ViewModel() {
             try {
                 supabase.auth.signOut()
                 Log.d("SupabaseAuth", "User signed out")
-                signedIn = false
+                setSignedInState(false)
                 uid = ""
             } catch (e: Exception) {
                 Log.e("SupabaseAuth", "failed to sign out: ${e.message}")
@@ -221,6 +254,7 @@ class MyViewModel : ViewModel() {
                         eq("owner_id", id)
                     }
                 }.decodeList<Place>()
+                Log.d("Supabase fetchPlaces()", "Places fetched")
             } catch (e: Exception) {
                 Log.e("Supabase fetchPlaces()", "Error: ${e.message}")
             }
@@ -263,7 +297,6 @@ class MyViewModel : ViewModel() {
                 val tempRequesters = mutableListOf<User>()
                 for (friendship in friendshipRes) {
                     if (friendship.accepted && friendship.receiverId == uid) {
-                        // Add requesterId if receiverId is 2
                         val friendId = friendship.requesterId
                         val tempFriend = userRes
                             .select() {
@@ -428,8 +461,9 @@ class MyViewModel : ViewModel() {
                 center = LatLng(latitude, longitude)
 
                 Log.d("Map View Model Location Update", "Latitude: $latitude, Longitude: $longitude")
+                Log.d("Supabase Location Update", "Latitude: $latitude, Longitude: $longitude")
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                Log.e("Supabase", "Location Update Error: ${e.message}")
             }
         }
     }
@@ -535,7 +569,7 @@ class MyViewModel : ViewModel() {
         }
     }
 
-    fun acceptRequest(requester: Long, receiver: Long) {
+    fun acceptRequest(requester: String, receiver: String) {
         viewModelScope.launch {
             try {
                 supabase.from("friendship").update({
@@ -554,7 +588,7 @@ class MyViewModel : ViewModel() {
         }
     }
 
-    fun declineRequest(requester: Long, receiver: Long) {
+    fun declineRequest(requester: String, receiver: String) {
         viewModelScope.launch {
             try {
                 supabase.from("friendship").delete(){

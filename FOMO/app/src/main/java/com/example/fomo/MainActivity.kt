@@ -39,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -99,13 +100,6 @@ class MainActivity : ComponentActivity() {
       showNotification()
     }
 
-
-    lifecycleScope.launch {
-      myViewModel.fetchDatabase()
-    }
-//    lifecycleScope.launch {
-//      myViewModel.fetchDatabase()
-//    }
 
     val backgroundLocationGranted = LocationHelper.isBackgroundLocationPermissionGranted(this)
     val locationPermissionsAlreadyGranted = LocationHelper.areLocationPermissionsGranted(this)
@@ -177,12 +171,17 @@ class MainActivity : ComponentActivity() {
   }
 
   private fun updateData() {
-    coroutineScope.launch {
-      while (isActive && myViewModel.signedIn) {
-        myViewModel.fetchFriends()
-        myViewModel.fetchPlaces()
-        delay(20000)
-      }
+    lifecycleScope.launch {
+//      myViewModel.signedIn.collect { isSignedIn ->
+//        if (isSignedIn) {
+//          while (isActive) {
+//            myViewModel.fetchFriends()
+//            myViewModel.fetchPlaces()
+//            LocationHelper.getPreciseLocation(this@MainActivity, myViewModel)
+//            delay(20000)
+//          }
+//        }
+//      }
     }
   }
 
@@ -199,7 +198,7 @@ fun NavigatorFun(myViewModel: MyViewModel) {
 
 @Composable
 fun Content(myViewModel: MyViewModel) {
-  if (myViewModel.signedIn) {
+  if (myViewModel.signedIn.collectAsState().value) {
     Scaffold(
       modifier = Modifier.fillMaxSize(),
       bottomBar = { Navbar(viewModel = myViewModel) }

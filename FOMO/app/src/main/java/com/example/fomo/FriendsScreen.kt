@@ -213,7 +213,7 @@ fun showNotification(context: Context, message: String) {
 @Composable
 fun FriendsList(myViewModel: MyViewModel) {
   var isLoaded by remember { mutableStateOf<Boolean>(false) }
-  var expanded = remember { mutableStateMapOf<Long, Boolean>() }
+  var expanded = remember { mutableStateMapOf<String, Boolean>() }
   var showRemoveFriendConfirmation by remember { mutableStateOf<Boolean>(false) }
   var selectedFriend by remember {mutableStateOf<User?>(null)}
   val friends = myViewModel.friendsList
@@ -298,13 +298,13 @@ fun FriendsList(myViewModel: MyViewModel) {
             contentDescription = "Options",
             modifier = Modifier.clickable(
               onClick = {
-                expanded[friend.id] = true
+                expanded[friend.uid] = true
               }
             )
           )
           DropdownMenu(
-            expanded = expanded[friend.id] ?: false,
-            onDismissRequest = { expanded[friend.id] = false },
+            expanded = expanded[friend.uid] ?: false,
+            onDismissRequest = { expanded[friend.uid] = false },
           ) {
             DropdownMenuItem(
               onClick = {
@@ -437,7 +437,7 @@ fun Requests(myViewModel: MyViewModel) {
             imageVector = Icons.Default.Check, contentDescription = "Check Icon",
             modifier = Modifier.clickable (
               onClick = {
-                myViewModel.acceptRequest(request.id ?: -1, myViewModel.id)
+                myViewModel.acceptRequest(request.uid, myViewModel.uid)
               }
             )
           )
@@ -445,7 +445,7 @@ fun Requests(myViewModel: MyViewModel) {
             imageVector = Icons.Default.Close, contentDescription = "X Icon",
             modifier = Modifier.clickable (
               onClick = {
-                myViewModel.declineRequest(request.id ?: -1, myViewModel.id)
+                myViewModel.declineRequest(request.uid, myViewModel.uid)
               }
             )
           )

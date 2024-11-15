@@ -154,7 +154,6 @@ class SignIn(private val myViewModel: MyViewModel) : Screen {
               if (success) {
                 // Navigate to the next screen
                 navigator!!.push(MapScreen(myViewModel))
-                myViewModel.signedIn = true
                 myViewModel.fetchDatabase()
               } else {
                 // Show an error message
