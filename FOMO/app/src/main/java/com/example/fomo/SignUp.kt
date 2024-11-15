@@ -1,6 +1,7 @@
 package com.example.fomo
 
 import android.graphics.Paint.Align
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +54,7 @@ class SignUp(private val myViewModel: MyViewModel) : Screen {
     var username by remember{ mutableStateOf<String>("") }
     var password by remember{ mutableStateOf<String>("") }
     val navigator = LocalNavigator.current
+    var showError by remember {mutableStateOf(false)}
 
     Box(
       contentAlignment = Alignment.BottomCenter,
@@ -82,7 +84,7 @@ class SignUp(private val myViewModel: MyViewModel) : Screen {
           TextField(
             value = username,
             onValueChange = { username = it },
-            placeholder = { Text("Username") },
+            placeholder = { Text("Enter your email") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
               keyboardType = KeyboardType.Text,
@@ -113,7 +115,7 @@ class SignUp(private val myViewModel: MyViewModel) : Screen {
           TextField(
             value = password,
             onValueChange = { password = it },
-            placeholder = { Text("Password") },
+            placeholder = { Text("Choose a password") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
               keyboardType = KeyboardType.Text,
@@ -136,10 +138,26 @@ class SignUp(private val myViewModel: MyViewModel) : Screen {
           )
         }
 
+        Text(
+          text = if (showError) "Account already exists!" else "",
+          color = if (showError) Color.Red else Color.Transparent, // Red when error, transparent otherwise
+          fontSize = 12.sp,
+          modifier = Modifier
+            .align(Alignment.Start)
+        )
+
         Button(
           onClick = {
             // Sign Up function here!
-            navigator!!.push(SignIn(myViewModel))
+            myViewModel.signUp(username, password) {success ->
+              showError = !success
+              if (success) {
+                navigator!!.push(SignIn(myViewModel))
+              } else {
+                Log.e("AuthFlow", "Sign up failed")
+              }
+            }
+
           },
           colors = ButtonDefaults.buttonColors(
             containerColor = Colors.primary,
@@ -150,7 +168,7 @@ class SignUp(private val myViewModel: MyViewModel) : Screen {
             .fillMaxWidth()
         ) {
           Text(
-            "Sign Up",
+            "Create Account",
             fontSize = 16.sp,
             modifier = Modifier.padding(vertical = 8.dp)
           )

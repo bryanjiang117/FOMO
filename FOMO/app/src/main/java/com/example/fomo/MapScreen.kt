@@ -145,7 +145,7 @@ fun Map(myViewModel: MyViewModel) {
           val friendLocation = LatLng(friend.latitude, friend.longitude)
           val friendStatus = myViewModel.statusList.filter {it.id == friend.status_id}[0]
           val friendMarkerState = rememberMarkerState(
-            key = "friend" + friend.id.toString(),
+            key = "friend " + friend.uid,
             position = friendLocation
           ).apply {
             showInfoWindow() // This ensures the info window is displayed when the marker is rendered

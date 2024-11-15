@@ -1,6 +1,7 @@
 package com.example.fomo
 
 import android.graphics.Paint.Align
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +54,7 @@ class SignIn(private val myViewModel: MyViewModel) : Screen {
     var username by remember{ mutableStateOf<String>("") }
     var password by remember{ mutableStateOf<String>("") }
     val navigator = LocalNavigator.current
+    var showError by remember {mutableStateOf(false) }
 
     Box(
       contentAlignment = Alignment.BottomCenter,
@@ -82,7 +84,7 @@ class SignIn(private val myViewModel: MyViewModel) : Screen {
           TextField(
             value = username,
             onValueChange = { username = it },
-            placeholder = { Text("Username") },
+            placeholder = { Text("Username/Email") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
               keyboardType = KeyboardType.Text,
@@ -135,12 +137,29 @@ class SignIn(private val myViewModel: MyViewModel) : Screen {
               .padding(end = 2.dp)
           )
         }
-
+        // Conditionally render error message
+        Text(
+          text = if (showError) "Invalid credentials" else "",
+          color = if (showError) Color.Red else Color.Transparent, // Red when error, transparent otherwise
+          fontSize = 12.sp,
+          modifier = Modifier
+            .align(Alignment.Start)
+        )
         Button(
           onClick = {
             // Sign in function here!
-            navigator!!.push(MapScreen(myViewModel))
-            myViewModel.signedIn = true
+
+            myViewModel.signIn(username, password) { success ->
+              showError = !success
+              if (success) {
+                // Navigate to the next screen
+                navigator!!.push(MapScreen(myViewModel))
+                myViewModel.fetchDatabase()
+              } else {
+                // Show an error message
+                Log.e("AuthFlow", "Sign-in failed")
+              }
+            }
           },
           colors = ButtonDefaults.buttonColors(
             containerColor = Colors.primary,
@@ -151,7 +170,7 @@ class SignIn(private val myViewModel: MyViewModel) : Screen {
             .fillMaxWidth()
         ) {
           Text(
-            "Sign in",
+            "Log in",
             fontSize = 16.sp,
             modifier = Modifier.padding(vertical = 8.dp)
           )
@@ -178,7 +197,7 @@ class SignIn(private val myViewModel: MyViewModel) : Screen {
             .fillMaxWidth()
         ) {
           Text(
-            "Sign Up",
+            "Create New Account",
             fontSize = 16.sp,
             modifier = Modifier.padding(vertical = 8.dp)
           )

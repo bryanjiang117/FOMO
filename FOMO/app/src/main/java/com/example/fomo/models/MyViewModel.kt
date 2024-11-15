@@ -16,6 +16,8 @@ import com.google.maps.android.SphericalUtil
 import com.example.fomo.BuildConfig
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -31,8 +33,10 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import com.google.maps.android.PolyUtil
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.delay
-
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class MyViewModel : ViewModel() {
 
@@ -46,21 +50,34 @@ class MyViewModel : ViewModel() {
         supabaseKey = BuildConfig.SUPABASE_KEY
     ) {
         install(Postgrest)
+        install(Auth)
     }
+
     private val ktorClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
     }
 
-    // temp
-    var signedIn by mutableStateOf<Boolean>(false) // temp variable to simulate auth
+    // start of signed in stateflow
+    private val _signedInFlow = MutableStateFlow(false)
+    val signedIn: StateFlow<Boolean> = _signedInFlow
+
+    private fun setSignedInState(isSignedIn: Boolean) {
+        _signedInFlow.value = isSignedIn
+    }
+
+    // end of signed in stateflow
+
+
+
     var id = 2L // sample logged in account
 
     // user
     var displayName by mutableStateOf("")
     var username by mutableStateOf("")
     var email by mutableStateOf("")
+    var uid by mutableStateOf("")
     private var password by mutableStateOf("")
     var notiNearby by mutableStateOf(false)
     var notiStatus by mutableStateOf(false)
@@ -135,6 +152,97 @@ class MyViewModel : ViewModel() {
 
     // End of Map Functions
 
+    // Start of Auth Functions
+
+    fun signUp(email: String, password: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                // Call Supabase's signUpWith function
+                val user = supabase.auth.signUpWith(Email) {
+                    this.email = email
+                    this.password = password
+                }
+
+
+                if (user != null) {
+                    // this line should not run for now
+                    Log.d("SupabaseAuth", "User created with email confirmation: $email")
+                    onResult(true)
+                } else {
+                    val userObject = supabase.auth.retrieveUserForCurrentSession(updateSession = true)
+                    val users = supabase.from("users")
+
+                    users.insert(User(
+                        uid = userObject.id,
+                        displayName = email,
+                        createdAt = dateFormat.format(Date()),
+                        email = email,
+                        username = email,
+                        password = password,
+                        latitude = 0.0,
+                        longitude = 0.0,
+                        status_id = 2,
+                        notiMessages = false,
+                        notiNearby = false,
+                        notiStatus = false
+                    ))
+
+                    Log.d("SupabaseAuth", "User signed up created and added to DB: $email")
+                    onResult(true)
+                }
+            } catch (e: Exception) {
+                Log.e("SupabaseAuth", "Sign-up failed: ${e.message}")
+                onResult(false)
+            }
+        }
+    }
+    fun signIn(email: String, password: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try{
+                supabase.auth.signInWith(Email) {
+                    this.email = email
+                    this.password = password
+                }
+
+                val session = supabase.auth.currentSessionOrNull()
+                val user = supabase.auth.retrieveUserForCurrentSession(updateSession = true)
+
+                // initialize sign-in state and establish userid
+                if (session != null) {
+                    Log.d("SupabaseAuth", "Session active, userid ${user.id}")
+                    uid = user.id
+                    onResult(true)
+                    setSignedInState(true)
+                } else {
+                    Log.d("SupabaseAuth", "Sign-in credentials invalid")
+                    onResult(false)
+                    setSignedInState(false)
+                }
+
+            } catch (e: Exception) {
+                Log.e("SupabaseAuth", "Sign-in failed: ${e.message}")
+                onResult(false)
+            }
+        }
+
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            try {
+                supabase.auth.signOut()
+                Log.d("SupabaseAuth", "User signed out")
+                setSignedInState(false)
+                uid = ""
+            } catch (e: Exception) {
+                Log.e("SupabaseAuth", "failed to sign out: ${e.message}")
+            }
+        }
+    }
+
+
+    // End of Auth Functions
+
 
     // Start of Database Functions
 
@@ -146,6 +254,7 @@ class MyViewModel : ViewModel() {
                         eq("owner_id", id)
                     }
                 }.decodeList<Place>()
+                Log.d("Supabase fetchPlaces()", "Places fetched")
             } catch (e: Exception) {
                 Log.e("Supabase fetchPlaces()", "Error: ${e.message}")
             }
@@ -187,33 +296,32 @@ class MyViewModel : ViewModel() {
                 val tempFriends = mutableListOf<User>()
                 val tempRequesters = mutableListOf<User>()
                 for (friendship in friendshipRes) {
-                    if (friendship.accepted && friendship.receiverId == id) {
-                        // Add requesterId if receiverId is 2
+                    if (friendship.accepted && friendship.receiverId == uid) {
                         val friendId = friendship.requesterId
                         val tempFriend = userRes
                             .select() {
                                 filter {
-                                    eq("id", friendId)
+                                    eq("uid", friendId)
                                 }
                             }.decodeSingle<User>()
                         tempFriends.add(tempFriend)
-                    } else if (friendship.accepted && friendship.requesterId == id) {
-                        // Add receiverId if requesterId is 2
+                    } else if (friendship.accepted && friendship.requesterId == uid) {
+                        // Add receiverId if requesterId is the current user
                         val friendId = friendship.receiverId
                         val tempFriend = userRes
                             .select() {
                                 filter {
-                                    eq("id", friendId)
+                                    eq("uid", friendId)
                                 }
                             }.decodeSingle<User>()
                         tempFriends.add(tempFriend)
-                    } else if (!friendship.accepted && friendship.receiverId == id) {
+                    } else if (!friendship.accepted && friendship.receiverId == uid) {
                         // Add requester if receiverId is 2
                         val friendId = friendship.requesterId
                         val tempFriend = userRes
                             .select() {
                                 filter {
-                                    eq("id", friendId)
+                                    eq("uid", friendId)
                                 }
                             }.decodeSingle<User>()
                         tempRequesters.add(tempFriend)
@@ -236,7 +344,7 @@ class MyViewModel : ViewModel() {
 
                 val me = supabase.from("users").select() {
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }.decodeSingle<User>()
 
@@ -268,7 +376,7 @@ class MyViewModel : ViewModel() {
                    set("display_name", newDisplayName)
                }){
                    filter {
-                       eq("id", id)
+                       eq("uid", uid)
                    }
                }
 
@@ -286,7 +394,7 @@ class MyViewModel : ViewModel() {
                     set("email", newEmail)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
 
@@ -304,7 +412,7 @@ class MyViewModel : ViewModel() {
                     set("username", newUsername)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
 
@@ -322,7 +430,7 @@ class MyViewModel : ViewModel() {
                     set("password", newPassword)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
 
@@ -345,7 +453,7 @@ class MyViewModel : ViewModel() {
                     set("longitude", longitude)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
                 userLongitude = longitude
@@ -353,8 +461,9 @@ class MyViewModel : ViewModel() {
                 center = LatLng(latitude, longitude)
 
                 Log.d("Map View Model Location Update", "Latitude: $latitude, Longitude: $longitude")
+                Log.d("Supabase Location Update", "Latitude: $latitude, Longitude: $longitude")
             } catch (e: Exception) {
-                Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                Log.e("Supabase", "Location Update Error: ${e.message}")
             }
         }
     }
@@ -370,7 +479,7 @@ class MyViewModel : ViewModel() {
                         set("noti_messages", false)
                     }){
                         filter {
-                            eq("id", id)
+                            eq("uid", uid)
                         }
                     }
                     notiStatus = false
@@ -383,7 +492,7 @@ class MyViewModel : ViewModel() {
                         set("status", newStatus.id)
                     }){
                         filter {
-                            eq("id", id)
+                            eq("uid", uid)
                         }
                     }
                 }
@@ -404,8 +513,8 @@ class MyViewModel : ViewModel() {
                 }.decodeSingle<User>()
                 val oppositeCheck = supabase.from("friendship").select() { // check if opposite request exists
                     filter {
-                        eq("requester_id", receiver.id)
-                        eq("receiver_id", id)
+                        eq("requester_id", receiver.uid)
+                        eq("receiver_id", uid)
                     }
                 }.decodeList<Friendship>()
                 if (oppositeCheck.isNotEmpty() && !oppositeCheck[0].accepted) { // if the opposite request exists just become friends
@@ -414,14 +523,14 @@ class MyViewModel : ViewModel() {
                         set("accepted", true)
                     }) {
                         filter {
-                            eq("requester_id", receiver.id)
-                            eq("receiver_id", id)
+                            eq("requester_id", receiver.uid)
+                            eq("receiver_id", uid)
                         }
                     }
                     fetchFriends()
-                } else if (oppositeCheck.isEmpty() && receiver.id != id) { // if not create a new friend request
-                    val newRequest = Friendship(createdAt = dateFormat.format(Date()), requesterId = id,
-                        receiverId = receiver.id, accepted = false)
+                } else if (oppositeCheck.isEmpty() && receiver.uid != uid) { // if not create a new friend request
+                    val newRequest = Friendship(createdAt = dateFormat.format(Date()), requesterId = uid,
+                        receiverId = receiver.uid, accepted = false)
                     supabase.from("friendship").insert(newRequest)
                     fetchFriends()
                 }
@@ -443,12 +552,12 @@ class MyViewModel : ViewModel() {
                     filter {
                         or {
                             and {
-                                eq("requester_id", friendToRemove.id);
-                                eq("receiver_id", id);
+                                eq("requester_id", friendToRemove.uid);
+                                eq("receiver_id", uid);
                             }
                             and {
-                                eq("requester_id", id);
-                                eq("receiver_id", friendToRemove.id);
+                                eq("requester_id", uid);
+                                eq("receiver_id", friendToRemove.uid);
                             }
                         }
                     }
@@ -460,7 +569,7 @@ class MyViewModel : ViewModel() {
         }
     }
 
-    fun acceptRequest(requester: Long, receiver: Long) {
+    fun acceptRequest(requester: String, receiver: String) {
         viewModelScope.launch {
             try {
                 supabase.from("friendship").update({
@@ -479,7 +588,7 @@ class MyViewModel : ViewModel() {
         }
     }
 
-    fun declineRequest(requester: Long, receiver: Long) {
+    fun declineRequest(requester: String, receiver: String) {
         viewModelScope.launch {
             try {
                 supabase.from("friendship").delete(){
@@ -503,7 +612,7 @@ class MyViewModel : ViewModel() {
                     set("noti_status", setTo)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
                 notiStatus = setTo
@@ -521,7 +630,7 @@ class MyViewModel : ViewModel() {
                     set("noti_nearby", setTo)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
                 notiNearby = setTo
@@ -538,7 +647,7 @@ class MyViewModel : ViewModel() {
                     set("noti_messages", setTo)
                 }){
                     filter {
-                        eq("id", id)
+                        eq("uid", uid)
                     }
                 }
                 notiMessages = setTo

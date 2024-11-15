@@ -53,6 +53,7 @@ dependencies {
   //database
   implementation(platform("io.github.jan-tennert.supabase:bom:3.0.1"))
   implementation("io.github.jan-tennert.supabase:postgrest-kt")
+  implementation("io.github.jan-tennert.supabase:auth-kt") // For Authentication
   implementation("io.ktor:ktor-client-android:3.0.0")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")

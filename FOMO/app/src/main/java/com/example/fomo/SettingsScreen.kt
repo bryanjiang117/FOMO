@@ -29,16 +29,20 @@ import android.provider.Settings
 import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
+import com.example.fomo.const.Colors
 import com.example.fomo.models.MyViewModel
+import cafe.adriel.voyager.navigator.LocalNavigator
 
 
 class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
   @Composable
   override fun Content() {
     val context = LocalContext.current
+    val navigator = LocalNavigator.current
     var isLocationSharingEnabled by remember { mutableStateOf(
       LocationHelper.areLocationPermissionsGranted(context))
     }
@@ -166,7 +170,32 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
           }
         )
       }
+
+      Button(
+        onClick = {
+          // log out function here!
+          myViewModel.logout()
+          navigator!!.push(SignIn(myViewModel))
+        },
+        colors = ButtonDefaults.buttonColors(
+          containerColor = Colors.primary,
+        ),
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+          .padding(top = 32.dp)
+          .fillMaxWidth()
+      ) {
+        Text(
+          "Log Out",
+          fontSize = 16.sp,
+          modifier = Modifier
+            .padding(vertical = 8.dp)
+            .align(Alignment.Bottom)
+        )
+      }
     }
+
+
 
   }
 
