@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.FocusRequester
+import androidx.core.app.ActivityCompat.recreate
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.maps.model.LatLng
@@ -34,11 +35,23 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import com.google.maps.android.PolyUtil
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.query.Columns
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.serializer
 
 class MyViewModel : ViewModel() {
@@ -93,9 +106,11 @@ class MyViewModel : ViewModel() {
     var requestList by mutableStateOf<List<User>>(emptyList())
     var statusList by mutableStateOf<List<Status>>(emptyList())
     var selectedLocation by mutableStateOf<LatLng?>(null)
-    var routePoints by mutableStateOf<List<LatLng>?>(null)
+    var route by mutableStateOf<List<LatLng>?>(null)
     var mode by mutableStateOf<String>("walking")
     var places by mutableStateOf<List<Place>>(emptyList())
+
+    private val routeMutex = Mutex()
 
     // Start of Map Functions
 
@@ -104,11 +119,13 @@ class MyViewModel : ViewModel() {
             return
         }
         selectedLocation = null
-        routePoints = null
+        route = null
         viewModelScope.launch {
             selectedLocation = coords
-            routePoints = getRoute(center, selectedLocation!!, mode)
-            setRoute(routePoints!!)
+            route = getRoute(center, selectedLocation!!, mode)
+            if (route != null && selectedLocation != null) {
+                setRoute(route!!, selectedLocation!!)
+            }
             updateStatus(statusList.filter{status -> status.description == "On my way"}[0])
         }
     }
@@ -154,35 +171,94 @@ class MyViewModel : ViewModel() {
         }
     }
 
-    @OptIn(InternalSerializationApi::class)
-    fun setRoute(route: List<LatLng>) {
-        viewModelScope.launch {
-            try {
-                supabase.from("users").update({
-                    set("route", Json.encodeToString(ListSerializer(LatLng::class.serializer()), route))
-                }) {
-                    filter {
-                        eq("uid", uid)
-                    }
-                }
-            } catch(e: Exception) {
-                Log.e("Supabase setRoute()", "Error: ${e.message}")
+    fun LatLngListToJSON(route: List<LatLng>): JsonArray {
+        val jsonRoute = buildJsonArray {
+            for (point in route) {
+                add(buildJsonObject {
+                    put("latitude", JsonPrimitive(point.latitude))
+                    put("longitude", JsonPrimitive(point.longitude))
+                })
             }
+        }
+        return jsonRoute
+    }
+
+    fun JSONToLatLngList(route: JsonArray): List<LatLng> {
+        val listRoute = mutableListOf<LatLng>()
+        for (point in route) {
+            listRoute.add(LatLng(
+                (point.jsonObject)["latitude"]!!.jsonPrimitive.double,  // Access latitude as Double
+                (point.jsonObject)["longitude"]!!.jsonPrimitive.double  // Access longitude as Double
+            ))
+        }
+        return listRoute
+    }
+
+    fun fetchRoute() {
+        viewModelScope.launch {
+            routeMutex.withLock {
+                try {
+                    val response = supabase.from("users").select(
+                        Columns.list("route, destination_latitude, destination_longitude")
+                    ) {
+                        filter {
+                            eq("uid", uid)
+                        }
+                    }.decodeSingle<User>()
+
+                    if (response.route != null && response.destination_latitude != null && response.destination_longitude != null) {
+                        selectedLocation = LatLng(response.destination_latitude, response.destination_longitude)
+                        route = JSONToLatLngList(response.route)
+                    }
+                } catch (e: Exception) {
+                    Log.d("Supabase fetchRoute()", "Error: ${e.message}")
+                }
+            }
+        }
+
+    }
+
+
+    fun setRoute(route: List<LatLng>, destination: LatLng) {
+        println("setroute route ${route}")
+        println("setroute destination ${destination}")
+        viewModelScope.launch {
+            routeMutex.withLock {
+                try {
+                    val jsonRoute = LatLngListToJSON(route)
+                    supabase.from("users").update({
+                        set("route", jsonRoute)
+                        set("destination_latitude", destination.latitude)
+                        set("destination_longitude", destination.longitude)
+                    }) {
+                        filter {
+                            eq("uid", uid)
+                        }
+                    }
+                } catch(e: Exception) {
+                    Log.e("Supabase setRoute()", "Error: ${e.message}")
+                }
+            }
+
         }
     }
 
-    fun removeRoute() {
+    private fun removeRoute() {
         viewModelScope.launch {
-            try {
-                supabase.from("users").update({
-                    set("route", null as String?)
-                }) {
-                    filter {
-                        eq("uid", uid)
+            routeMutex.withLock {
+                try {
+                    supabase.from("users").update({
+                        set("route", null as String?)
+                        set("destination_latitude", null as Double?)
+                        set("destination_longitude", null as Double?)
+                    }) {
+                        filter {
+                            eq("uid", uid)
+                        }
                     }
+                } catch (e: Exception) {
+                    Log.e("Supabase removeRoute()", "Error: ${e.message}")
                 }
-            } catch (e: Exception) {
-                Log.e("Supabase removeRoute()", "Error: ${e.message}")
             }
         }
     }
@@ -264,18 +340,42 @@ class MyViewModel : ViewModel() {
 
     }
 
+    private fun reset() {
+        displayName = ""
+        username = ""
+        email = ""
+        uid = ""
+        password = ""
+        notiNearby = false
+        notiStatus = false
+        notiMessages = false
+        userLongitude = 0.0
+        userLatitude = 0.0
+        center = LatLng(43.4723, -80.5449)
+        status = defaultStatus
+        friendsList = emptyList()
+        requestList = emptyList()
+        statusList = emptyList()
+        selectedLocation = null
+        route = null
+        mode = "walking"
+        places = emptyList()
+    }
+
     fun logout() {
         viewModelScope.launch {
             try {
                 supabase.auth.signOut()
+                supabase.auth.clearSession()
                 Log.d("SupabaseAuth", "User signed out")
                 setSignedInState(false)
-                uid = ""
+                reset()
             } catch (e: Exception) {
                 Log.e("SupabaseAuth", "failed to sign out: ${e.message}")
             }
         }
     }
+
 
 
     // End of Auth Functions
@@ -395,7 +495,7 @@ class MyViewModel : ViewModel() {
                 notiMessages = me.notiMessages
                 status = statusRes.filter {it.id == me.status_id}[0]
 
-
+                fetchRoute()
                 fetchFriends()
                 fetchPlaces()
 
@@ -524,7 +624,7 @@ class MyViewModel : ViewModel() {
                     notiMessages = false
                 } else {
                     if (newStatus.description != "On My Way") {
-                        removeRoute()
+//                        removeRoute()
                     }
                     supabase.from("users").update({
                         set("status", newStatus.id)

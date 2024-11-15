@@ -160,13 +160,22 @@ fun Map(myViewModel: MyViewModel) {
             snippet = "${friendStatus.emoji} ${friendStatus.description}",
           )
           // display friends' on my way routes
-          if (friend.route != null) {
-            val routePoints = Json.decodeFromString(ListSerializer(LatLng::class.serializer()), friend.route)
-            Polyline(
-              points = routePoints,
-              color = Color.Blue,
-              width = 10f,
+          if (friend.destination_latitude != null && friend.destination_longitude != null) {
+            Marker(
+              state = rememberMarkerState(
+                key = "${friend.displayName}'s destination",
+                position = LatLng(friend.destination_latitude, friend.destination_longitude)
+              ),
+              title = "${friend.displayName} is on their way"
             )
+            if (friend.route != null) {
+              val routePoints = myViewModel.JSONToLatLngList(friend.route)
+              Polyline(
+                points = routePoints,
+                color = Color.Blue,
+                width = 10f,
+              )
+            }
           }
         }
 
@@ -177,9 +186,9 @@ fun Map(myViewModel: MyViewModel) {
             title = "On my way",
           )
           markerState.showInfoWindow()
-          if (myViewModel.routePoints != null) {
+          if (myViewModel.route != null) {
             Polyline(
-              points = myViewModel.routePoints!!,
+              points = myViewModel.route!!,
               color = Color.Blue,
               width = 10f,
             )

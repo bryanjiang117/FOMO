@@ -2,6 +2,7 @@ package com.example.fomo.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
 
 @Serializable
 data class User(
@@ -17,5 +18,7 @@ data class User(
   @SerialName("noti_nearby") val notiNearby: Boolean,           // Notification setting for nearby events
   @SerialName("noti_status") val notiStatus: Boolean,           // Notification setting for status updates
   @SerialName("noti_messages") val notiMessages: Boolean,       // Notification setting for messages
-  @SerialName("route") val route: String? = null,
+  @SerialName("route") val route: JsonArray? = null,
+  @SerialName("destination_latitude") val destination_latitude: Double? = null,
+  @SerialName("destination_longitude") val destination_longitude: Double? = null,
 )
