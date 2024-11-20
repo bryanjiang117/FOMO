@@ -57,6 +57,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.serializer
 import java.io.InputStream
 import android.content.ContentResolver
+import android.net.Uri
 
 class MyViewModel : ViewModel() {
 
@@ -109,6 +110,8 @@ class MyViewModel : ViewModel() {
     var route by mutableStateOf<List<LatLng>?>(null)
     var mode by mutableStateOf<String>("walking")
     var places by mutableStateOf<List<Place>>(emptyList())
+
+    val routeMutex = Mutex()
 
     // Start of Map Functions
 
@@ -341,9 +344,6 @@ class MyViewModel : ViewModel() {
         email = ""
         uid = ""
         password = ""
-        notiNearby = false
-        notiStatus = false
-        notiMessages = false
         userLongitude = 0.0
         userLatitude = 0.0
         center = LatLng(43.4723, -80.5449)
