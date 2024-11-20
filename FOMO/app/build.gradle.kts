@@ -16,7 +16,7 @@ android {
     minSdk = 24
     targetSdk = 34
     versionCode = 1
-    versionName = "0.10"
+    versionName = "0.30"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -54,9 +54,11 @@ dependencies {
   implementation(platform("io.github.jan-tennert.supabase:bom:3.0.1"))
   implementation("io.github.jan-tennert.supabase:postgrest-kt")
   implementation("io.github.jan-tennert.supabase:auth-kt") // For Authentication
+  implementation("io.github.jan-tennert.supabase:storage-kt:3.0.2")
   implementation("io.ktor:ktor-client-android:3.0.0")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+  implementation ("io.coil-kt:coil-compose:2.5.0")
 
   implementation(libs.androidx.lifecycle.viewmodel.compose)
   implementation(libs.androidx.activity.compose)

@@ -9,5 +9,5 @@ data class Place(
   @SerialName("latitude") val latitude: Double,
   @SerialName("longitude") val longitude: Double,
   @SerialName("radius") val radius: Double,
-  @SerialName("owner_id") val owner_id: Long,
+  @SerialName("owner_id") val owner_id: String,
 )
