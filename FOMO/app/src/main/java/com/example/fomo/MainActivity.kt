@@ -177,6 +177,7 @@ class MainActivity : ComponentActivity() {
           while (isActive) {
             myViewModel.fetchFriends()
             myViewModel.fetchPlaces()
+            myViewModel.fetchGroups()
             LocationHelper.getPreciseLocation(this@MainActivity, myViewModel)
             delay(5000)
           }

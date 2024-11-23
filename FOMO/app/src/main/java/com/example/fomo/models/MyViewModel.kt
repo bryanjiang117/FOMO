@@ -106,6 +106,8 @@ class MyViewModel : ViewModel() {
     var friendsList by mutableStateOf<List<User>>(emptyList())
     var requestList by mutableStateOf<List<User>>(emptyList())
     var statusList by mutableStateOf<List<Status>>(emptyList())
+    var groupList by mutableStateOf<List<Group>>(emptyList())
+    var groupRequestList by mutableStateOf<List<Group>>(emptyList())
     var selectedLocation by mutableStateOf<LatLng?>(null)
     var route by mutableStateOf<List<LatLng>?>(null)
     var mode by mutableStateOf<String>("walking")
@@ -341,6 +343,7 @@ class MyViewModel : ViewModel() {
     private fun reset() {
         displayName = ""
         username = ""
+        imageUri = null
         email = ""
         uid = ""
         password = ""
@@ -351,10 +354,13 @@ class MyViewModel : ViewModel() {
         friendsList = emptyList()
         requestList = emptyList()
         statusList = emptyList()
+        groupList = emptyList()
+        groupRequestList = emptyList()
         selectedLocation = null
         route = null
         mode = "walking"
         places = emptyList()
+
     }
 
     fun logout() {
@@ -397,15 +403,26 @@ class MyViewModel : ViewModel() {
         }
     }
 
-    fun setPlace(name:String, coords: LatLng, radius: Double) {
+    fun setPlace(name:String, coords: LatLng?, radius: Double?) {
+
         viewModelScope.launch {
             try {
-                val newPlace = Place(name, coords.latitude, coords.longitude, radius, uid)
+                val newPlace = Place(name = name, latitude = coords?.latitude ?: userLatitude,
+                    longitude = coords?.longitude ?: userLongitude,  radius = radius ?: 0.001, owner_id = uid)
                 supabase.from("places").insert(newPlace)
             } catch (e: Exception) {
                 Log.e("Supabase setPlace()", "Error: ${e.message}")
             }
         }
+    }
+
+    // Checks if the current user location is in the given place
+    fun isInPlace(place: Place): Boolean {
+        return ((place.latitude - place.radius < userLatitude &&
+                userLatitude < place.latitude + place.radius) &&
+                (place.longitude - place.radius < userLongitude &&
+                    userLongitude < place.longitude + place.radius))
+
     }
 
     fun removePlace(id: Long) {
@@ -473,6 +490,41 @@ class MyViewModel : ViewModel() {
         }
     }
 
+    fun fetchGroups() {
+        viewModelScope.launch {
+            try {
+                val linkRes = supabase.from("group_links")
+                    .select() {
+                        filter {
+                            eq("user_uid", uid)
+                        }
+                    }.decodeList<GroupLink>()
+                val tempGroups = mutableListOf<Group>()
+                val tempRequesters = mutableListOf<Group>()
+                for (groupLink in linkRes) {
+                    val groupId = groupLink.groupId
+                    val tempGroup = supabase.from("groups")
+                        .select() {
+                            filter {
+                                eq("id", groupId)
+                            }
+                        }.decodeSingle<Group>()
+                    if (groupLink.accepted) {
+                        tempGroups.add(tempGroup)
+                    } else {
+                        tempRequesters.add(tempGroup)
+                    }
+                }
+                groupList = tempGroups
+                groupRequestList = tempRequesters
+
+                Log.d("groupFetching", "Success!")
+            } catch (e: Exception) {
+                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
+            }
+        }
+    }
+
     fun fetchDatabase() {
         viewModelScope.launch {
             try {
@@ -496,6 +548,7 @@ class MyViewModel : ViewModel() {
                 fetchRoute()
                 fetchFriends()
                 fetchPlaces()
+                fetchGroups()
 
                 Log.d("SupabaseConnection", "Friends fetched: $friendsList")
             } catch (e: Exception) {
@@ -657,9 +710,9 @@ class MyViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val receiver = supabase.from("users").select() { // Find the receiver
-                        filter {
-                            eq("username", username)
-                        }
+                    filter {
+                        eq("username", username)
+                    }
                 }.decodeSingle<User>()
                 val oppositeCheck = supabase.from("friendship").select() { // check if opposite request exists
                     filter {
@@ -764,6 +817,118 @@ class MyViewModel : ViewModel() {
             }
         }
 
+    }
+
+    // create a group
+    fun createGroup(groupName: String) {
+        viewModelScope.launch {
+            try{
+                val newGroup = Group(createdAt = dateFormat.format(Date()), name = groupName,
+                    creatorId =  uid)
+                supabase.from("groups").insert(newGroup)
+                val groupCreated = supabase.from("groups").select() {
+                    filter {
+                        eq("name", groupName);
+                        eq("creator_id", uid);
+                    }
+                }.decodeSingle<Group>()
+                val newLink = GroupLink(createdAt = dateFormat.format(Date()), userId = uid,
+                    groupId = groupCreated.id ?: 0, accepted = true)
+                supabase.from("group_links").insert(newLink)
+                fetchGroups()
+                //onResult(true)
+            } catch (e: Exception) {
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                //onResult(false)
+            }
+        }
+    }
+
+    // create a group request to add someone to the group
+    fun createGroupRequest(groupId: Long, userId: String) {
+        viewModelScope.launch {
+            try{
+                val newRequest = GroupLink(createdAt = dateFormat.format(Date()), userId = userId,
+                    groupId = groupId, accepted = false)
+                supabase.from("group_links").insert(newRequest)
+                fetchGroups()
+               // onResult(true)
+            } catch (e: Exception) {
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                //onResult(false)
+            }
+        }
+    }
+
+    // leave group
+    fun removeGroup(groupId: Long) {
+        viewModelScope.launch {
+            try {
+                val groupDelete = supabase.from("groups").select() {
+                    filter {
+                        eq("id", groupId);
+                    }
+                }.decodeSingle<Group>()
+                supabase.from("group_links").delete() {
+                    filter {
+                        eq("user_uid", uid);
+                        eq("group_id", groupId);
+                    }
+                }
+                if (groupDelete.creatorId == uid) { // if the creator leaves the group, delete group
+                    supabase.from("groups").delete() {
+                        filter {
+                            eq("id", groupId);
+                        }
+                    }
+                }
+                fetchGroups()
+                //onResult(true)
+            } catch(e: Exception) {
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
+               // onResult(false)
+            }
+        }
+    }
+
+    // accept group requests
+    fun acceptGroupRequest(groupId: Long) {
+        viewModelScope.launch {
+            try {
+                supabase.from("group_links").update({
+                    set("accepted", true)
+                }){
+                    filter {
+                        eq("user_uid", uid)
+                        eq("group_id", groupId)
+                    }
+                }
+                fetchGroups()
+                //onResult(true)
+            } catch (e: Exception) {
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                //onResult(false)
+            }
+        }
+    }
+
+    // decline group requests
+    fun declineGroupRequest(groupId: Long) {
+        viewModelScope.launch {
+            try {
+                supabase.from("group_links").delete() {
+                    filter {
+                        eq("user_uid", uid);
+                        eq("group_id", groupId);
+                    }
+                }
+                fetchGroups()
+                //onResult(true)
+            } catch(e: Exception) {
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                // onResult(false)
+            }
+        }
     }
 
     // End of Database Functions
