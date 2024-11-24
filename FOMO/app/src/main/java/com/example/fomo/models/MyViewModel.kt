@@ -105,6 +105,7 @@ class MyViewModel : ViewModel() {
     var status by mutableStateOf<Status>(defaultStatus)
     var friendsList by mutableStateOf<List<User>>(emptyList())
     var requestList by mutableStateOf<List<User>>(emptyList())
+    var groupMemberList by mutableStateOf<List<User>>(emptyList())
     var statusList by mutableStateOf<List<Status>>(emptyList())
     var groupList by mutableStateOf<List<Group>>(emptyList())
     var groupRequestList by mutableStateOf<List<Group>>(emptyList())
@@ -353,6 +354,7 @@ class MyViewModel : ViewModel() {
         status = defaultStatus
         friendsList = emptyList()
         requestList = emptyList()
+        groupMemberList = emptyList()
         statusList = emptyList()
         groupList = emptyList()
         groupRequestList = emptyList()
@@ -820,7 +822,7 @@ class MyViewModel : ViewModel() {
     }
 
     // create a group
-    fun createGroup(groupName: String) {
+    fun createGroup(groupName: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try{
                 val newGroup = Group(createdAt = dateFormat.format(Date()), name = groupName,
@@ -836,32 +838,32 @@ class MyViewModel : ViewModel() {
                     groupId = groupCreated.id ?: 0, accepted = true)
                 supabase.from("group_links").insert(newLink)
                 fetchGroups()
-                //onResult(true)
+                onResult(true)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
-                //onResult(false)
+                onResult(false)
             }
         }
     }
 
     // create a group request to add someone to the group
-    fun createGroupRequest(groupId: Long, userId: String) {
+    fun createGroupRequest(groupId: Long, userId: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try{
                 val newRequest = GroupLink(createdAt = dateFormat.format(Date()), userId = userId,
                     groupId = groupId, accepted = false)
                 supabase.from("group_links").insert(newRequest)
                 fetchGroups()
-               // onResult(true)
+                onResult(true)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
-                //onResult(false)
+                onResult(false)
             }
         }
     }
 
     // leave group
-    fun removeGroup(groupId: Long) {
+    fun removeGroup(groupId: Long, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
                 val groupDelete = supabase.from("groups").select() {
@@ -883,16 +885,16 @@ class MyViewModel : ViewModel() {
                     }
                 }
                 fetchGroups()
-                //onResult(true)
+                onResult(true)
             } catch(e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
-               // onResult(false)
+                onResult(false)
             }
         }
     }
 
     // accept group requests
-    fun acceptGroupRequest(groupId: Long) {
+    fun acceptGroupRequest(groupId: Long, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
                 supabase.from("group_links").update({
@@ -904,16 +906,16 @@ class MyViewModel : ViewModel() {
                     }
                 }
                 fetchGroups()
-                //onResult(true)
+                onResult(true)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
-                //onResult(false)
+                onResult(false)
             }
         }
     }
 
     // decline group requests
-    fun declineGroupRequest(groupId: Long) {
+    fun declineGroupRequest(groupId: Long, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
                 supabase.from("group_links").delete() {
@@ -923,10 +925,39 @@ class MyViewModel : ViewModel() {
                     }
                 }
                 fetchGroups()
-                //onResult(true)
+                onResult(true)
             } catch(e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
-                // onResult(false)
+                onResult(false)
+            }
+        }
+    }
+
+    // get group member list of the given group id
+    fun getGroupMembers(groupId: Long) {
+        viewModelScope.launch {
+            try {
+                fetchGroups()
+                val groupLinkList = supabase.from("group_links").select() {
+                    filter {
+                        eq("group_id", groupId);
+                    }
+                }.decodeList<GroupLink>()
+                val tempMembers = mutableListOf<User>()
+                for (groupLink in groupLinkList) {
+                    val memberUID = groupLink.userId
+                    val tempMember =  supabase.from("users")
+                        .select() {
+                            filter {
+                                eq("uid", memberUID)
+                            }
+                        }.decodeSingle<User>()
+                    tempMembers.add(tempMember)
+                }
+                groupMemberList = tempMembers
+                Log.d("groupMembers", "Success!")
+            } catch(e: Exception) {
+                Log.e("SupabaseConnection", "DB Error: ${e.message}")
             }
         }
     }
