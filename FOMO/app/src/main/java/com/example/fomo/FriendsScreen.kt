@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Paint.Align
 import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,15 +74,43 @@ import com.example.fomo.models.User
 import io.ktor.client.request.request
 import coil.compose.rememberAsyncImagePainter
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PersonAddAlt
+import androidx.compose.material.icons.filled.PersonAddAlt1
+import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.fomo.models.Group
 
+val friendGroups = listOf(
+  Group(1, "", "Friend Circle A", "124ec67d-3f75-454a-93be-58da8d446008"),
+)
 
 class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
   @Composable
   override fun Content() {
-    var selectedTab by remember { mutableStateOf(0)}
+    var isDialogOpen by remember { mutableStateOf(false )}
+    val selectedItemIndex = remember { mutableIntStateOf(-1) } // = mutableState so it can be changed when passed as param
+    var friendList by remember { mutableStateOf<List<User>>(myViewModel.friendsList)}
 
-    fun onSelectTab(newTab: Int) {
-      selectedTab = newTab
+    fun handleAddFriend() {
+      isDialogOpen = true
     }
 
     Column(
@@ -91,12 +120,15 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
         .padding(16.dp)
     ) {
       Header()
-      Nav(selectedTab, ::onSelectTab)
-      when (selectedTab) {
-        0 -> FriendsList(myViewModel)
-        1 -> AddFriends(myViewModel)
-        2 -> Requests(myViewModel)
-      }
+      Nav(selectedItemIndex, ::handleAddFriend)
+      AddFriend(
+        isOpen = isDialogOpen,
+        onDismissRequest = { isDialogOpen = false },
+        selectedItemIndex.intValue,
+        friendList,
+        myViewModel
+      )
+      FriendsList(selectedItemIndex.value, myViewModel)
     }
   }
 }
@@ -115,108 +147,92 @@ fun Header() {
   }
 }
 
-val navCardTitles = arrayOf(
-  "My Friends",
-  "Add Friends",
-  "Requests",
-)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Nav(selectedTab: Int, onSelectTab: (Int) -> Unit){
+fun Nav(selectedItemIndex: MutableState<Int>, handleAddFriend: () -> Unit) {
+  var expanded by remember { mutableStateOf(false) }
+
   Row(
-    horizontalArrangement = Arrangement.spacedBy(8.dp),
+    horizontalArrangement = Arrangement.SpaceBetween,
+    verticalAlignment = Alignment.CenterVertically,
+    modifier = Modifier
+      .fillMaxWidth()
   ) {
-    for((i, title) in navCardTitles.withIndex()) {
-      Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = if (i == selectedTab) Colors.primary else Color.LightGray),
-        modifier = Modifier
-          .clip(RoundedCornerShape(24.dp))
-          .clickable (
-            onClick = {onSelectTab(i)},
-            // bounds ripple animation to rounded shape instead of rectangle
-            indication = rememberRipple(bounded = true),
-            interactionSource = remember { MutableInteractionSource() }
-          )
-      ) {
-        Text(
-          text = title,
-          color = if (i == selectedTab) Color.White else Color.Black,
-          fontWeight = if (i == selectedTab) FontWeight.SemiBold else FontWeight.Normal,
-          modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-      }
-    }
-  }
-}
-
-@Composable
-fun RemoveFriendConfirmation(friend: User?, onDismissRequest: () -> Unit,
-                             onConfirmation: () -> Unit, ) {
-  AlertDialog(
-    icon = {
-    },
-    title = {
-      Text(text = "Confirmation")
-    },
-    text = {
-      Text(text = "Are you sure you want to remove ${friend!!.displayName} as a friend?")
-    },
-    onDismissRequest = {
-      onDismissRequest()
-    },
-    confirmButton = {
-      TextButton(
-        onClick = {
-          onConfirmation()
-        }
-      ) {
-        Text("Confirm")
-      }
-    },
-    dismissButton = {
-      TextButton(
-        onClick = {
-          onDismissRequest()
-        }
-      ) {
-        Text("Dismiss")
-      }
-    }
-  )
-}
-
-
-
-fun showNotification(context: Context, message: String) {
-  val builder = NotificationCompat.Builder(context, "friend_request_channel")
-    .setSmallIcon(R.drawable.notification_icon) // Replace with your icon
-    .setContentTitle("New Friend Request")
-    .setContentText(message)
-    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-
-  with(NotificationManagerCompat.from(context)) {
-    // Ensure permission is granted for Android 13+
-    if (ActivityCompat.checkSelfPermission(
-        context,
-        Manifest.permission.POST_NOTIFICATIONS
-      ) == PackageManager.PERMISSION_GRANTED
+    ExposedDropdownMenuBox(
+      expanded = expanded,
+      onExpandedChange = {
+        expanded = !expanded
+      },
+      modifier = Modifier.width(250.dp)
     ) {
-      Log.d("FriendsScreen","allowed")
-      // Show the notification with a unique ID
-      notify(2, builder.build())
-    } else {
-      Log.d("FriendsScreen","not Allowed")
+      OutlinedTextField(
+        value = if (selectedItemIndex.value == -1) "All Friends" else friendGroups[selectedItemIndex.value].name,
+        onValueChange = {},
+        readOnly = true,
+        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+        colors = TextFieldDefaults.colors(
+          focusedIndicatorColor = Color.Black,
+          unfocusedContainerColor = Color.Transparent,
+          focusedContainerColor = Color.Transparent,
+        ),
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+          .menuAnchor()
+      )
+
+      ExposedDropdownMenu(
+        expanded = expanded,
+        onDismissRequest = { expanded = false }
+      ) {
+        DropdownMenuItem(
+          text = {
+            Text(
+              text = "All Friends",
+              fontWeight = if (selectedItemIndex.value == -1) FontWeight.SemiBold else FontWeight.Normal
+            )},
+          onClick = {
+            selectedItemIndex.value = -1
+            expanded = false
+          }
+        )
+        friendGroups.forEachIndexed { i, group ->
+          DropdownMenuItem(
+            text = {
+              Text(
+                text = group.name,
+                fontWeight = if (i == selectedItemIndex.value) FontWeight.SemiBold else FontWeight.Normal
+              )},
+            onClick = {
+              selectedItemIndex.value = i
+              expanded = false
+            }
+          )
+        }
+      }
+    }
+
+    Button(
+      onClick = handleAddFriend,
+      colors = ButtonDefaults.buttonColors(
+        containerColor = Colors.primary
+      ),
+      modifier = Modifier.height(50.dp),
+      shape = RoundedCornerShape(8.dp)
+    ) {
+      if (selectedItemIndex.value == -1) {
+        Icon(imageVector = Icons.Default.PersonAdd, contentDescription = "Add Friend")
+      } else {
+        Icon(imageVector = Icons.Default.PersonAddAlt1, contentDescription = "Add Friend to Group")
+      }
 
     }
   }
 }
 
 @Composable
-fun FriendsList(myViewModel: MyViewModel) {
+fun FriendsList(selectedItemIndex: Int, myViewModel: MyViewModel) {
   val context = LocalContext.current
-  var isLoaded by remember { mutableStateOf<Boolean>(false) }
-  var expanded = remember { mutableStateMapOf<String, Boolean>() }
+  val expanded = remember { mutableStateMapOf<String, Boolean>() }
   var showRemoveFriendConfirmation by remember { mutableStateOf<Boolean>(false) }
   var selectedFriend by remember {mutableStateOf<User?>(null)}
   val friends = myViewModel.friendsList
@@ -302,28 +318,30 @@ fun FriendsList(myViewModel: MyViewModel) {
           )
         }
         Spacer(modifier = Modifier.weight(1f))
-        Box {
-          Icon(
-            imageVector = Icons.Default.MoreVert,
-            contentDescription = "Options",
-            modifier = Modifier.clickable(
-              onClick = {
-                expanded[friend.uid] = true
-              }
+        if (selectedItemIndex == -1) {
+          Box {
+            Icon(
+              imageVector = Icons.Default.MoreVert,
+              contentDescription = "Options",
+              modifier = Modifier.clickable(
+                onClick = {
+                  expanded[friend.uid] = true
+                }
+              )
             )
-          )
-          DropdownMenu(
-            expanded = expanded[friend.uid] ?: false,
-            onDismissRequest = { expanded[friend.uid] = false },
-          ) {
-            DropdownMenuItem(
-              onClick = {
-                openRemoveFriendConfirmation(friend)
-              },
-              text = {
-                Text("Remove Friend")
-              },
-            )
+            DropdownMenu(
+              expanded = expanded[friend.uid] ?: false,
+              onDismissRequest = { expanded[friend.uid] = false },
+            ) {
+              DropdownMenuItem(
+                onClick = {
+                  openRemoveFriendConfirmation(friend)
+                },
+                text = {
+                  Text("Remove Friend")
+                },
+              )
+            }
           }
         }
       }
@@ -331,47 +349,145 @@ fun FriendsList(myViewModel: MyViewModel) {
   }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddFriends(myViewModel: MyViewModel) {
-  val context = LocalContext.current
-  var text by remember { mutableStateOf("") }
+fun AddFriend(isOpen: Boolean, onDismissRequest: () -> Unit, selectedItemIndex: Int, friendList: List<User>, myViewModel: MyViewModel) {
+  if (isOpen) {
+    val context = LocalContext.current
+    var text by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var selectedFriend by remember { mutableStateOf<User?>(null)}
 
-  Row(
-    verticalAlignment = Alignment.CenterVertically,
-    modifier = Modifier.fillMaxWidth()
-  ) {
-    OutlinedTextField(
-      value = text,
-      onValueChange = { text = it },
-      label = { Text("Add Friend") },
-      placeholder = { Text("Enter your friend's username") },
-      singleLine = true,
-      keyboardOptions = KeyboardOptions(
-        keyboardType = KeyboardType.Text,
-        imeAction = ImeAction.Done
-      ),
-      shape = RoundedCornerShape(16.dp),
-      modifier = Modifier
-        .weight(1f)
-        .padding(end = 2.dp)
-    )
+    Dialog(onDismissRequest = onDismissRequest) {
+      Box(
+        modifier = Modifier
+          .clip(RoundedCornerShape(8.dp))
+          .background(Color.White)
+          .height(300.dp)
+      ) {
+        Column(
+          verticalArrangement = Arrangement.SpaceBetween,
+          modifier = Modifier
+            .padding(horizontal = 32.dp, vertical = 32.dp)
+            .fillMaxSize()
+        ) {
+          Text(
+            text = if (selectedItemIndex == -1) "Add Friend" else "Add Friend to Group",
+            fontWeight = FontWeight.Bold,
+            fontSize = 24.sp,
+            modifier = Modifier.padding(top = 8.dp)
+          )
 
-    TextButton(
-      onClick = {
-        myViewModel.createRequest(text) { success ->
-          if (success) {
-            Toast.makeText(context, "Sent Friend Request", Toast.LENGTH_SHORT).show()
+          if (selectedItemIndex == -1) {
+            OutlinedTextField(
+              value = text,
+              onValueChange = { text = it },
+              label = { Text("Enter Username") },
+              placeholder = { Text("eg: bobthetroll") },
+              singleLine = true,
+              keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Done
+              ),
+              shape = RoundedCornerShape(16.dp),
+            )
           } else {
-            Toast.makeText(context, "Error: User Not Found or Valid", Toast.LENGTH_SHORT).show()
+            Box (
+              modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentSize(Alignment.TopStart)
+            ) {
+              ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = {
+                  expanded = !expanded
+                },
+              ) {
+                OutlinedTextField(
+                  value = if (selectedFriend != null) selectedFriend!!.displayName else "Select a friend",
+                  onValueChange = {},
+                  readOnly = true,
+                  trailingIcon = {
+                    Icon(
+                      imageVector = Icons.Default.ArrowDropDown, // Use a dropdown arrow icon
+                      contentDescription = "Dropdown icon"
+                    )
+                  },
+                  colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Black,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                  ),
+                  shape = RoundedCornerShape(8.dp),
+                  modifier = Modifier.menuAnchor()
+                )
+
+                ExposedDropdownMenu(
+                  expanded = expanded,
+                  onDismissRequest = { expanded = false },
+                ) {
+
+                  for (friend in friendList) {
+                    DropdownMenuItem(
+                      text = {
+                        Text(
+                          text = friend.displayName,
+                        )
+                      },
+                      onClick = {
+                        selectedFriend = friend
+                        expanded = false
+                      }
+                    )
+                  }
+                }
+              }
+            }
+          }
+
+          Row(
+            horizontalArrangement = Arrangement.End,
+            modifier = Modifier.fillMaxWidth()
+          ) {
+            Button(
+              onClick = {
+                if (selectedItemIndex == -1) {
+                  myViewModel.createRequest(text) { success ->
+                    if (success) {
+                      Toast.makeText(context, "Sent Friend Request", Toast.LENGTH_SHORT).show()
+                    } else {
+                      Toast.makeText(context, "Error: User Not Found or Invalid", Toast.LENGTH_SHORT).show()
+                    }
+                  }
+                } else {
+                  if (selectedFriend != null) {
+                    myViewModel.createGroupRequest(friendGroups[selectedItemIndex].id!!, selectedFriend!!.uid) { success ->
+                      if (success) {
+                        Toast.makeText(context, "Sent Invite to Group", Toast.LENGTH_SHORT).show()
+                      } else {
+                        Toast.makeText(context, "Error: User Not Found or Invalid", Toast.LENGTH_SHORT).show()
+                      }
+                    }
+                  } else {
+                    Toast.makeText(context, "Did not select a friend to add", Toast.LENGTH_SHORT).show()
+                  }
+                }
+                onDismissRequest()
+              },
+              colors = ButtonDefaults.buttonColors(
+                containerColor = Colors.primary
+              ),
+              modifier = Modifier
+                .padding(top = 8.dp)
+            ) {
+              Text(
+                text = "Submit",
+                modifier = Modifier.padding(4.dp)
+              )
+            }
           }
         }
-      },
-      modifier = Modifier
-        .padding(top = 8.dp)
-    ) {
-      Text(
-        text = "Add",
-        color = MaterialTheme.colorScheme.primary, fontSize=18.sp)
+      }
     }
   }
 }
@@ -481,6 +597,66 @@ fun Requests(myViewModel: MyViewModel) {
           )
         }
       }
+    }
+  }
+}
+
+@Composable
+fun RemoveFriendConfirmation(friend: User?, onDismissRequest: () -> Unit,
+                             onConfirmation: () -> Unit, ) {
+  AlertDialog(
+    icon = {
+    },
+    title = {
+      Text(text = "Confirmation")
+    },
+    text = {
+      Text(text = "Are you sure you want to remove ${friend!!.displayName} as a friend?")
+    },
+    onDismissRequest = {
+      onDismissRequest()
+    },
+    confirmButton = {
+      TextButton(
+        onClick = {
+          onConfirmation()
+        }
+      ) {
+        Text("Confirm")
+      }
+    },
+    dismissButton = {
+      TextButton(
+        onClick = {
+          onDismissRequest()
+        }
+      ) {
+        Text("Dismiss")
+      }
+    }
+  )
+}
+
+fun showNotification(context: Context, message: String) {
+  val builder = NotificationCompat.Builder(context, "friend_request_channel")
+    .setSmallIcon(R.drawable.notification_icon) // Replace with your icon
+    .setContentTitle("New Friend Request")
+    .setContentText(message)
+    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+  with(NotificationManagerCompat.from(context)) {
+    // Ensure permission is granted for Android 13+
+    if (ActivityCompat.checkSelfPermission(
+        context,
+        Manifest.permission.POST_NOTIFICATIONS
+      ) == PackageManager.PERMISSION_GRANTED
+    ) {
+      Log.d("FriendsScreen","allowed")
+      // Show the notification with a unique ID
+      notify(2, builder.build())
+    } else {
+      Log.d("FriendsScreen","not Allowed")
+
     }
   }
 }

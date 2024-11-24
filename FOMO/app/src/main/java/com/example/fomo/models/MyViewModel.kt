@@ -845,14 +845,14 @@ class MyViewModel : ViewModel() {
     }
 
     // create a group request to add someone to the group
-    fun createGroupRequest(groupId: Long, userId: String) {
+    fun createGroupRequest(groupId: Long, userId: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try{
                 val newRequest = GroupLink(createdAt = dateFormat.format(Date()), userId = userId,
                     groupId = groupId, accepted = false)
                 supabase.from("group_links").insert(newRequest)
                 fetchGroups()
-               // onResult(true)
+                onResult(true)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
                 //onResult(false)
