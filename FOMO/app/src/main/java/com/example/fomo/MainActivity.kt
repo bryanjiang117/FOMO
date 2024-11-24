@@ -177,8 +177,10 @@ class MainActivity : ComponentActivity() {
           while (isActive) {
             myViewModel.fetchFriends()
             myViewModel.fetchPlaces()
+            myViewModel.fetchGroups()
             LocationHelper.getPreciseLocation(this@MainActivity, myViewModel)
-            delay(20000)
+            delay(5000)
+            Log.d("updateData", "data has been updated")
           }
         }
       }

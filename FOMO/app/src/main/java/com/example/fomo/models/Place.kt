@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Place(
+  @SerialName("id") val id: Long? = null,
   @SerialName("name") val name: String,
   @SerialName("latitude") val latitude: Double,
   @SerialName("longitude") val longitude: Double,

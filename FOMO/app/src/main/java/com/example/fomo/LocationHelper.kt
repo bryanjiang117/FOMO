@@ -18,7 +18,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.example.fomo.models.MyViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 
 object LocationHelper {
 
@@ -100,26 +104,43 @@ object LocationHelper {
     }
   }
 
-  @SuppressLint("MissingPermission")
   fun getPreciseLocation(context: Context, viewState: MyViewModel) {
     val fusedLocationClient: FusedLocationProviderClient =
       LocationServices.getFusedLocationProviderClient(context)
-    fusedLocationClient.lastLocation
-      .addOnSuccessListener { location: Location? ->
-        if (location != null) {
-          val latitude = location.latitude
-          val longitude = location.longitude
 
-          viewState.updateUserLocation(latitude, longitude)
-        } else {
-          Log.d("PreciseLocation", "Location is null, unable to retrieve location.")
-          println("Location is null, unable to retrieve location.")
+    if (ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_FINE_LOCATION
+      ) == PackageManager.PERMISSION_GRANTED
+    ) {
+      val locationRequest = LocationRequest.Builder(
+        Priority.PRIORITY_HIGH_ACCURACY,
+        6000
+      ).apply {
+        setMaxUpdates(1) // only do it once
+      }.build()
+
+      val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+          val location = locationResult.lastLocation
+          if (location != null) {
+            val latitude = location.latitude
+            val longitude = location.longitude
+            viewState.updateUserLocation(latitude, longitude)
+            Log.d("PreciseLocation", "Updated location: ($latitude, $longitude)")
+          }
+          fusedLocationClient.removeLocationUpdates(this)
         }
       }
-      .addOnFailureListener { exception ->
-        Log.e("PreciseLocation", "Failed to get location: ${exception.message}")
-        println("Failed to get location: ${exception.message}")
-      }
+
+      fusedLocationClient.requestLocationUpdates(
+        locationRequest,
+        locationCallback,
+        null
+      )
+    } else {
+      Log.e("getPreciseLocation", "Access Fine Location Permission Not Granted")
+    }
   }
 
   @RequiresApi(Build.VERSION_CODES.Q)

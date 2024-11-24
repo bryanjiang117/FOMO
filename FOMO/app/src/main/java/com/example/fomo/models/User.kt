@@ -2,6 +2,7 @@ package com.example.fomo.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
 
 @Serializable
 data class User(
@@ -14,4 +15,7 @@ data class User(
   @SerialName("latitude") val latitude: Double,                 // User's latitude location
   @SerialName("longitude") val longitude: Double,               // User's longitude location
   @SerialName("status") val status_id: Long,                        // Status ID
+  @SerialName("route") val route: JsonArray? = null,
+  @SerialName("destination_latitude") val destination_latitude: Double? = null,
+  @SerialName("destination_longitude") val destination_longitude: Double? = null,
 )

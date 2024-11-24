@@ -47,3 +47,9 @@ data class Duration(
 data class Polyline(
   val points: String
 )
+
+@Serializable
+data class LatLng(
+  val latitude: Double,
+  val longitude: Double
+)
