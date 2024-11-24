@@ -180,6 +180,7 @@ class MainActivity : ComponentActivity() {
             myViewModel.fetchGroups()
             LocationHelper.getPreciseLocation(this@MainActivity, myViewModel)
             delay(5000)
+            Log.d("updateData", "data has been updated")
           }
         }
       }
