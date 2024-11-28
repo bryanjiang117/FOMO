@@ -102,16 +102,16 @@ class MyViewModel : ViewModel() {
     var userLongitude by mutableDoubleStateOf(0.0)
     var userLatitude by mutableDoubleStateOf(0.0)
     var center by mutableStateOf(LatLng(43.4723, -80.5449))
-    var status by mutableStateOf<Status>(defaultStatus)
+    var status by mutableStateOf(defaultStatus)
     var friendsList by mutableStateOf<List<User>>(emptyList())
     var requestList by mutableStateOf<List<User>>(emptyList())
     var groupMemberList by mutableStateOf<List<User>>(emptyList())
     var statusList by mutableStateOf<List<Status>>(emptyList())
     var groupList by mutableStateOf<List<Group>>(emptyList())
-    var groupRequestList by mutableStateOf<List<Group>>(emptyList())
+    var groupRequestList by mutableStateOf<List<Pair<User, Group>>>(emptyList())
     var selectedLocation by mutableStateOf<LatLng?>(null)
     var route by mutableStateOf<List<LatLng>?>(null)
-    var mode by mutableStateOf<String>("walking")
+    var mode by mutableStateOf("walking")
     var places by mutableStateOf<List<Place>>(emptyList())
 
     val routeMutex = Mutex()
@@ -492,38 +492,43 @@ class MyViewModel : ViewModel() {
         }
     }
 
-    fun fetchGroups() {
-        viewModelScope.launch {
-            try {
-                val linkRes = supabase.from("group_links")
+    suspend fun fetchGroups() {
+        try {
+            val linkRes = supabase.from("group_links")
+                .select() {
+                    filter {
+                        eq("uid", uid)
+                    }
+                }.decodeList<GroupLink>()
+            val tempGroups = mutableListOf<Group>()
+            val tempRequesters = mutableListOf<Pair<User, Group>>()
+            for (groupLink in linkRes) {
+                val groupId = groupLink.groupId
+                val tempGroup = supabase.from("groups")
                     .select() {
                         filter {
-                            eq("user_uid", uid)
+                            eq("id", groupId)
                         }
-                    }.decodeList<GroupLink>()
-                val tempGroups = mutableListOf<Group>()
-                val tempRequesters = mutableListOf<Group>()
-                for (groupLink in linkRes) {
-                    val groupId = groupLink.groupId
-                    val tempGroup = supabase.from("groups")
+                    }.decodeSingle<Group>()
+
+                if (groupLink.accepted) {
+                    tempGroups.add(tempGroup)
+                } else {
+                    val sender = supabase.from("users")
                         .select() {
                             filter {
-                                eq("id", groupId)
+                                eq("uid", groupLink.senderUid)
                             }
-                        }.decodeSingle<Group>()
-                    if (groupLink.accepted) {
-                        tempGroups.add(tempGroup)
-                    } else {
-                        tempRequesters.add(tempGroup)
-                    }
+                        }.decodeSingle<User>()
+                    tempRequesters.add(Pair(sender, tempGroup))
                 }
-                groupList = tempGroups
-                groupRequestList = tempRequesters
-
-                Log.d("groupFetching", "Success!")
-            } catch (e: Exception) {
-                Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
             }
+            groupList = tempGroups
+            groupRequestList = tempRequesters
+
+            Log.d("groupFetching", "Success!")
+        } catch (e: Exception) {
+            Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
         }
     }
 
@@ -822,26 +827,24 @@ class MyViewModel : ViewModel() {
     }
 
     // create a group
-    fun createGroup(groupName: String, onResult: (Boolean) -> Unit) {
+    fun createGroup(groupName: String, onResult: (Long) -> Unit) {
         viewModelScope.launch {
+            var groupCreated: Group? = null
             try{
                 val newGroup = Group(createdAt = dateFormat.format(Date()), name = groupName,
-                    creatorId =  uid)
-                supabase.from("groups").insert(newGroup)
-                val groupCreated = supabase.from("groups").select() {
-                    filter {
-                        eq("name", groupName);
-                        eq("creator_id", uid);
-                    }
+                    creatorId = uid)
+                groupCreated = supabase.from("groups").insert(newGroup) {
+                    select()
                 }.decodeSingle<Group>()
                 val newLink = GroupLink(createdAt = dateFormat.format(Date()), userId = uid,
-                    groupId = groupCreated.id ?: 0, accepted = true)
+                    senderUid = uid, groupId = groupCreated.id ?: 0, accepted = true)
                 supabase.from("group_links").insert(newLink)
                 fetchGroups()
-                onResult(true)
+                println("urmom1 ${groupCreated.id!!}")
+                onResult(groupCreated.id!!)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
-                onResult(false)
+                onResult(-1L)
             }
         }
     }
@@ -850,10 +853,19 @@ class MyViewModel : ViewModel() {
     fun createGroupRequest(groupId: Long, userId: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try{
-                val newRequest = GroupLink(createdAt = dateFormat.format(Date()), userId = userId,
-                    groupId = groupId, accepted = false)
-                supabase.from("group_links").insert(newRequest)
-                fetchGroups()
+                val response = supabase.from("group_links").select() {
+                    filter {
+                        eq("uid", userId)
+                        eq("group_id", groupId)
+                    }
+                }.decodeList<GroupLink>()
+
+                if (response.isEmpty()) { // checking if it was already sent (by someone)
+                    val newRequest = GroupLink(createdAt = dateFormat.format(Date()), userId = userId,
+                        senderUid = uid, groupId = groupId, accepted = false)
+                    supabase.from("group_links").insert(newRequest)
+                    fetchGroups()
+                }
                 onResult(true)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
@@ -873,7 +885,7 @@ class MyViewModel : ViewModel() {
                 }.decodeSingle<Group>()
                 supabase.from("group_links").delete() {
                     filter {
-                        eq("user_uid", uid);
+                        eq("uid", uid);
                         eq("group_id", groupId);
                     }
                 }
@@ -894,22 +906,22 @@ class MyViewModel : ViewModel() {
     }
 
     // accept group requests
-    fun acceptGroupRequest(groupId: Long, onResult: (Boolean) -> Unit) {
+    fun acceptGroupRequest(groupId: Long, onResult: (Long) -> Unit) {
         viewModelScope.launch {
             try {
                 supabase.from("group_links").update({
                     set("accepted", true)
                 }){
                     filter {
-                        eq("user_uid", uid)
+                        eq("uid", uid)
                         eq("group_id", groupId)
                     }
                 }
                 fetchGroups()
-                onResult(true)
+                onResult(groupId)
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
-                onResult(false)
+                onResult(-1L)
             }
         }
     }
@@ -920,7 +932,7 @@ class MyViewModel : ViewModel() {
             try {
                 supabase.from("group_links").delete() {
                     filter {
-                        eq("user_uid", uid);
+                        eq("uid", uid);
                         eq("group_id", groupId);
                     }
                 }
@@ -934,16 +946,18 @@ class MyViewModel : ViewModel() {
     }
 
     // get group member list of the given group id
-    fun getGroupMembers(groupId: Long) {
+    fun getGroupMembers(groupId: Long, onResult: (List<User>) -> Unit) {
+        val tempMembers = mutableListOf<User>()
         viewModelScope.launch {
             try {
                 fetchGroups()
                 val groupLinkList = supabase.from("group_links").select() {
                     filter {
-                        eq("group_id", groupId);
+                        eq("group_id", groupId)
+                        eq("accepted", true)
+                        neq("uid", uid) // not current user
                     }
                 }.decodeList<GroupLink>()
-                val tempMembers = mutableListOf<User>()
                 for (groupLink in groupLinkList) {
                     val memberUID = groupLink.userId
                     val tempMember =  supabase.from("users")
@@ -956,8 +970,10 @@ class MyViewModel : ViewModel() {
                 }
                 groupMemberList = tempMembers
                 Log.d("groupMembers", "Success!")
+                onResult(groupMemberList)
             } catch(e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
+                onResult(emptyList())
             }
         }
     }
