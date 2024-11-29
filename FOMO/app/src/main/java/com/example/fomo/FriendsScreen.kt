@@ -1,4 +1,4 @@
-  package com.example.fomo
+package com.example.fomo
 
   import android.Manifest
   import android.app.NotificationChannel
@@ -75,6 +75,7 @@
   import io.ktor.client.request.request
   import coil.compose.rememberAsyncImagePainter
   import android.widget.Toast
+  import cafe.adriel.voyager.navigator.LocalNavigator
   import androidx.compose.foundation.background
   import androidx.compose.foundation.layout.width
   import androidx.compose.foundation.layout.wrapContentSize
@@ -316,6 +317,7 @@
 
   @Composable
   fun FriendsList(selectedItemIndex: Int, friendsList: List<User>, myViewModel: MyViewModel) {
+    val navigator = LocalNavigator.current
     val context = LocalContext.current
     val expanded = remember { mutableStateMapOf<String, Boolean>() }
     var showRemoveFriendConfirmation by remember { mutableStateOf<Boolean>(false) }
@@ -439,7 +441,11 @@
         Row(
           horizontalArrangement = Arrangement.spacedBy(16.dp),
           verticalAlignment = Alignment.CenterVertically,
-          modifier = Modifier.height(75.dp)
+          modifier = Modifier
+            .height(75.dp)
+            .clickable {
+              navigator?.push(MapScreen(myViewModel, LatLng(friend.latitude, friend.longitude)))
+            }
         ) {
           Image(
             painter = rememberAsyncImagePainter(myViewModel.getImgUrl(friend.uid),
