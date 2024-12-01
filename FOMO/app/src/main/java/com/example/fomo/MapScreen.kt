@@ -104,9 +104,15 @@ fun Map(myViewModel: MyViewModel, friendLocation: LatLng?) {
     key = "Selected Location",
   )
 
+  val userMarkerState = rememberMarkerState(key = "User Position", position = LatLng(myViewModel.userLatitude, myViewModel.userLongitude))
+
 
   LaunchedEffect(key1 = true){
     myViewModel.loadImage(context, myViewModel.getImgUrl(myViewModel.uid))
+  }
+
+  LaunchedEffect(myViewModel.userLatitude, myViewModel.userLongitude){
+    userMarkerState.position = LatLng(myViewModel.userLatitude, myViewModel.userLongitude)
   }
 
   LaunchedEffect(key1 = myViewModel.friendsList) {
@@ -164,16 +170,16 @@ fun Map(myViewModel: MyViewModel, friendLocation: LatLng?) {
       val isDataLoaded by myViewModel.isDataLoaded.collectAsState()
       val isSessionRestored by myViewModel.sessionRestored.collectAsState()
       if (isMapLoaded && isDataLoaded && isSessionRestored) {
-        val userPosition = LatLng(myViewModel.userLatitude, myViewModel.userLongitude)  // Create LatLng object
         val icon = myViewModel.bitmapDescriptor
 
         // user avatar
           Marker(
-            state = rememberMarkerState(key = "User Position", position = userPosition),
+            state = userMarkerState,
             title = myViewModel.displayName,
             snippet = "${myViewModel.status.emoji} ${myViewModel.status.description}",
             icon = icon  // Use the descriptor from ViewModel
           )
+        Log.d("mapdebug", "marker loaded at ${myViewModel.userLatitude}")
 
         // display friends
         for(friend in myViewModel.friendsList) {
