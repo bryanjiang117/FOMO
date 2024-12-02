@@ -1,6 +1,5 @@
-package com.example.fomo.models
+package com.example.fomo.viewmodel
 
-import android.Manifest
 import android.util.Log
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -51,26 +50,24 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.io.InputStream
 import android.content.ContentResolver
 import android.content.Context
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.snapshots.SnapshotStateMap
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.example.fomo.R
-import com.example.fomo.showNotification
+import com.example.fomo.entities.DirectionsResponse
+import com.example.fomo.entities.Friendship
+import com.example.fomo.entities.GeocodeResponse
+import com.example.fomo.entities.Group
+import com.example.fomo.entities.GroupLink
+import com.example.fomo.entities.Place
+import com.example.fomo.entities.Status
+import com.example.fomo.entities.User
+import com.example.fomo.views.showNotification
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 
@@ -452,7 +449,8 @@ class MyViewModel : ViewModel() {
                     val userObject = supabase.auth.retrieveUserForCurrentSession(updateSession = true)
                     val users = supabase.from("users")
 
-                    users.insert(User(
+                    users.insert(
+                        User(
                         uid = userObject.id,
                         displayName = email,
                         createdAt = dateFormat.format(Date()),
@@ -462,7 +460,8 @@ class MyViewModel : ViewModel() {
                         latitude = 0.0,
                         longitude = 0.0,
                         status_id = 1,
-                    ))
+                    )
+                    )
 
                     Log.d("SupabaseAuth", "User signed up created and added to DB: $email")
                     onResult(true)

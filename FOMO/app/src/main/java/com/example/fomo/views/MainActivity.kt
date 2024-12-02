@@ -1,4 +1,4 @@
-package com.example.fomo
+package com.example.fomo.views
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -50,9 +50,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
+import com.example.fomo.R
 import com.example.fomo.viewmodel.MyViewModel
-import com.example.fomo.const.Colors
+import com.example.fomo.consts.Colors
 import com.example.fomo.ui.theme.FOMOTheme
+import com.example.fomo.util.LocationHelper
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.*
 
@@ -99,7 +101,12 @@ class MainActivity : ComponentActivity() {
         val myViewModel: MyViewModel = viewModel()
 
         FOMOTheme {
-          LocationHelper.LocationChecker(locationPermissionsAlreadyGranted, backgroundLocationGranted, myViewModel,this)
+          LocationHelper.LocationChecker(
+            locationPermissionsAlreadyGranted,
+            backgroundLocationGranted,
+            myViewModel,
+            this
+          )
           NavigatorFun(myViewModel = myViewModel)
         }
       }
@@ -205,7 +212,7 @@ fun NavigatorFun(myViewModel: MyViewModel) {
     // Show a loading indicator while session restoration is in progress
     LoadingScreen()
   } else {
-    val startScreen = if (isSignedIn) MapScreen(myViewModel) else SignIn(myViewModel)
+    val startScreen = if (isSignedIn) MapScreen(myViewModel) else SignInScreen(myViewModel)
     Navigator(startScreen) { Content(myViewModel) }
   }
 }

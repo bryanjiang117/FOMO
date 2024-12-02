@@ -1,5 +1,5 @@
 // LocationHelper.kt
-package com.example.fomo.views
+package com.example.fomo.util
 
 import android.Manifest
 import android.content.Context

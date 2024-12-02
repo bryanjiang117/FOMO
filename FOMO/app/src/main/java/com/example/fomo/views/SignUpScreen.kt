@@ -40,11 +40,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.fomo.const.Colors
+import com.example.fomo.consts.Colors
 import cafe.adriel.voyager.navigator.LocalNavigator
 import com.example.fomo.R
 
-class SignUp(private val myViewModel: MyViewModel) : Screen {
+class SignUpScreen(private val myViewModel: MyViewModel) : Screen {
   @OptIn(ExperimentalMaterial3Api::class)
   @Composable
   override fun Content() {
@@ -150,7 +150,7 @@ class SignUp(private val myViewModel: MyViewModel) : Screen {
             myViewModel.signUp(context, username, password) {success ->
               showError = !success
               if (success) {
-                navigator!!.push(SignIn(myViewModel))
+                navigator!!.push(SignInScreen(myViewModel))
               } else {
                 Log.e("AuthFlow", "Sign up failed")
               }
@@ -180,7 +180,7 @@ class SignUp(private val myViewModel: MyViewModel) : Screen {
 
         OutlinedButton(
           onClick = {
-            navigator!!.push(SignIn(myViewModel))
+            navigator!!.push(SignInScreen(myViewModel))
           },
           shape = RoundedCornerShape(8.dp),
           colors = ButtonDefaults.buttonColors(

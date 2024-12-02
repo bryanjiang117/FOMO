@@ -1,4 +1,4 @@
-package com.example.fomo
+package com.example.fomo.views
 
 import android.net.Uri
 import android.widget.Toast
@@ -26,6 +26,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.PopupProperties
 import cafe.adriel.voyager.core.screen.Screen
 import coil.compose.rememberAsyncImagePainter
+import com.example.fomo.R
 import com.example.fomo.viewmodel.MyViewModel
 
 

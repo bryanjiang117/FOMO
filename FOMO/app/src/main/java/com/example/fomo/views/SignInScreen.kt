@@ -41,11 +41,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.fomo.const.Colors
+import com.example.fomo.consts.Colors
 import cafe.adriel.voyager.navigator.LocalNavigator
 import com.example.fomo.R
 
-class SignIn(private val myViewModel: MyViewModel) : Screen {
+class SignInScreen(private val myViewModel: MyViewModel) : Screen {
   @OptIn(ExperimentalMaterial3Api::class)
   @Composable
   override fun Content() {
@@ -183,7 +183,7 @@ class SignIn(private val myViewModel: MyViewModel) : Screen {
 
         OutlinedButton(
           onClick = {
-            navigator!!.push(SignUp(myViewModel))
+            navigator!!.push(SignUpScreen(myViewModel))
           },
           shape = RoundedCornerShape(8.dp),
           colors = ButtonDefaults.buttonColors(

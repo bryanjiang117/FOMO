@@ -1,4 +1,4 @@
-package com.example.fomo
+package com.example.fomo.views
 
 import android.content.Context
 import android.content.Intent
@@ -29,9 +29,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
-import com.example.fomo.const.Colors
+import com.example.fomo.consts.Colors
 import com.example.fomo.viewmodel.MyViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import com.example.fomo.util.LocationHelper
 
 
 class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
@@ -40,11 +41,16 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
     val context = LocalContext.current
     val navigator = LocalNavigator.current
     var isLocationSharingEnabled by remember { mutableStateOf(
-      LocationHelper.areLocationPermissionsGranted(context))
+      LocationHelper.areLocationPermissionsGranted(context)
+    )
     }
     var isNotificationSharingEnabled by remember { mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled()) }
     val foreground by remember { mutableStateOf(LocationHelper.areLocationPermissionsGranted(context)) }
-    val background by remember { mutableStateOf(LocationHelper.isBackgroundLocationPermissionGranted(context)) }
+    val background by remember { mutableStateOf(
+      LocationHelper.isBackgroundLocationPermissionGranted(
+        context
+      )
+    ) }
 
 
     Column(
@@ -106,7 +112,7 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
         onClick = {
           // log out function here!
           myViewModel.logout(context)
-          navigator!!.push(SignIn(myViewModel))
+          navigator!!.push(SignInScreen(myViewModel))
         },
         colors = ButtonDefaults.buttonColors(
           containerColor = Colors.primary,

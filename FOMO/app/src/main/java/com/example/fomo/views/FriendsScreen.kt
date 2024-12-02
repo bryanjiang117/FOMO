@@ -1,4 +1,4 @@
-package com.example.fomo
+package com.example.fomo.views
 
   import android.Manifest
   import android.content.Context
@@ -47,7 +47,7 @@ package com.example.fomo
   import androidx.compose.foundation.layout.fillMaxWidth
   import androidx.compose.foundation.text.KeyboardOptions
   import androidx.compose.material.icons.Icons
-  import com.example.fomo.const.Colors
+  import com.example.fomo.consts.Colors
   import androidx.compose.material.icons.filled.Check
   import androidx.compose.material.icons.filled.Close
   import androidx.compose.material.icons.filled.MoreVert
@@ -61,7 +61,7 @@ package com.example.fomo
   import androidx.core.app.NotificationCompat
   import androidx.core.app.NotificationManagerCompat
   import androidx.core.content.ContextCompat
-  import com.example.fomo.models.User
+  import com.example.fomo.entities.User
   import coil.compose.rememberAsyncImagePainter
   import android.widget.Toast
   import cafe.adriel.voyager.navigator.LocalNavigator
@@ -82,7 +82,8 @@ package com.example.fomo
   import androidx.compose.runtime.MutableState
   import androidx.compose.runtime.collectAsState
   import androidx.compose.ui.window.Dialog
-  import com.example.fomo.models.Group
+  import com.example.fomo.R
+  import com.example.fomo.entities.Group
 
 class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
     @Composable

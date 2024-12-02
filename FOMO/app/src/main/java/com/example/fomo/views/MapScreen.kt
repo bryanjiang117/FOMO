@@ -1,4 +1,4 @@
-package com.example.fomo
+package com.example.fomo.views
 
 import android.util.Log
 import android.widget.Toast
@@ -64,7 +64,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.PopupProperties
 import cafe.adriel.voyager.core.screen.Screen
-import com.example.fomo.const.Colors
+import com.example.fomo.BuildConfig
+import com.example.fomo.consts.Colors
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
