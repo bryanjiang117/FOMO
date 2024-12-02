@@ -1481,7 +1481,7 @@ class MyViewModel : ViewModel() {
     suspend fun stopGame() {
         if (game.id != -1L){
             try {
-                supabase.from("game").update({
+                supabase.from("games").update({
                     set("running", false)
                 }) {
                     filter {
@@ -1502,7 +1502,7 @@ class MyViewModel : ViewModel() {
     suspend fun userTagged() {
         if (game.id != -1L){
             try {
-                supabase.from("game").update({
+                supabase.from("games").update({
                     set("hunter_id", uid)
                 }) {
                     filter {
