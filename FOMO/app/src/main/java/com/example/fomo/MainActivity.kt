@@ -1,4 +1,4 @@
-package com.example.fomo.views
+package com.example.fomo
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -50,11 +50,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
-import com.example.fomo.R
 import com.example.fomo.viewmodel.MyViewModel
 import com.example.fomo.consts.Colors
 import com.example.fomo.ui.theme.FOMOTheme
 import com.example.fomo.util.LocationHelper
+import com.example.fomo.views.FriendsScreen
+import com.example.fomo.views.MapScreen
+import com.example.fomo.views.ProfileScreen
+import com.example.fomo.views.SettingsScreen
+import com.example.fomo.views.SignInScreen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.*
 

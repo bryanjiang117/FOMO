@@ -26,6 +26,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.PopupProperties
 import cafe.adriel.voyager.core.screen.Screen
 import coil.compose.rememberAsyncImagePainter
+import com.example.fomo.LoadingScreen
 import com.example.fomo.R
 import com.example.fomo.viewmodel.MyViewModel
 
