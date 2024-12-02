@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
@@ -36,11 +37,16 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -56,6 +62,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -303,10 +311,14 @@ fun GameModal(myViewModel: MyViewModel){
     }
   }
 }
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WaitingModal(myViewModel: MyViewModel){
   val isOpen by myViewModel.isWaitingModalVisible.collectAsState()
+  val gameDuration by myViewModel.gameDuration.collectAsState()
+  val creator by myViewModel.isGameCreator.collectAsState()
   val coroutineScope = rememberCoroutineScope()
+  var menuExpanded by remember { mutableStateOf(false) }
 
   if (isOpen) {
     Dialog(
@@ -332,6 +344,61 @@ fun WaitingModal(myViewModel: MyViewModel){
             fontSize = 18.sp,
             modifier = Modifier.padding(bottom = 16.dp)
           )
+          if (creator) {
+            ExposedDropdownMenuBox(
+              expanded = menuExpanded,
+              onExpandedChange = {
+                menuExpanded = !menuExpanded
+              },
+              modifier = Modifier
+//              .align(Alignment.TopCenter)
+                .padding(16.dp)
+            ) {
+              OutlinedTextField(
+                value = "$gameDuration minutes",
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuExpanded) },
+                colors = TextFieldDefaults.colors(
+                  focusedIndicatorColor = Color.Black,
+                  unfocusedContainerColor = Color.White,
+                  focusedContainerColor = Color.White,
+                ),
+                shape = RoundedCornerShape(8.dp),
+                textStyle = TextStyle(
+                  fontSize = 14.sp,
+                ),
+                modifier = Modifier
+                  .height(48.dp)
+                  .width(250.dp)
+                  .menuAnchor()
+              )
+              ExposedDropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+                modifier = Modifier.background(Color.White)
+              ) {
+
+                myViewModel.gameDurationArr.forEachIndexed { _, duration ->
+                  DropdownMenuItem(
+                    text = {
+                      Text(
+                        text = "$duration minutes",
+                        fontWeight = FontWeight.Normal
+                      )},
+                    onClick = {
+                      coroutineScope.launch{
+                        myViewModel.setGameDuration(duration)
+                        myViewModel.updateGameDuration()
+                        menuExpanded = false
+                      }
+                    },
+                  )
+                }
+              }
+            }
+          }
+
 
           Row(
             horizontalArrangement = Arrangement.SpaceEvenly,

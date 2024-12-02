@@ -321,7 +321,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
           ),
           modifier = Modifier
             .height(50.dp)
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 7.dp),
           shape = RoundedCornerShape(8.dp)
         ) {
             Icon(imageVector = Icons.Default.SportsEsports, contentDescription = "Game")
@@ -335,7 +335,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
         ),
         modifier = Modifier
           .height(50.dp)
-          .padding(horizontal = 8.dp),
+          .padding(horizontal = 7.dp),
         shape = RoundedCornerShape(8.dp)
       ) {
         if (groupIndex == -1) {

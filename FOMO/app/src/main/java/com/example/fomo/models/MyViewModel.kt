@@ -88,6 +88,8 @@ class MyViewModel : ViewModel() {
     private val _isWaitingModalVisible = MutableStateFlow(false) //game
     private val _gameEndTime = MutableStateFlow("") //game end time
     private val _hunterName = MutableStateFlow("")
+    private val _gameDuration = MutableStateFlow(2)
+    private val _isGameCreator = MutableStateFlow(false)
 
     private var previousGroupRequestCount by mutableIntStateOf(0)
     private var previousFriendRequestCount by mutableIntStateOf(0)
@@ -102,6 +104,8 @@ class MyViewModel : ViewModel() {
     val startGame: StateFlow<Boolean> = _startGame
     val gameEndTime: StateFlow<String> = _gameEndTime
     val hunterName: StateFlow<String> = _hunterName
+    val gameDuration: StateFlow<Int> = _gameDuration
+    val isGameCreator: StateFlow<Boolean> = _isGameCreator
 
     fun selectGroup(index: Int) {
         _groupIndex.value = index
@@ -120,6 +124,12 @@ class MyViewModel : ViewModel() {
     }
     fun setHunterName(name: String){
         _hunterName.value = name
+    }
+    fun setGameDuration(len: Int) {
+        _gameDuration.value = len
+    }
+    fun toggleGameCreator(bool: Boolean){
+        _isGameCreator.value = bool
     }
 
     suspend fun uriToBitmapDescriptor(context: Context, imageUri: String): BitmapDescriptor? {
@@ -156,7 +166,6 @@ class MyViewModel : ViewModel() {
             return null
         }
     }
-
 
     private fun addWhiteBorder(bitmap: Bitmap, borderSize: Int): Bitmap {
         val width = bitmap.width + borderSize * 2
@@ -264,6 +273,7 @@ class MyViewModel : ViewModel() {
     var mode by mutableStateOf("walking")
     var places by mutableStateOf<List<Place>>(emptyList())
     var game by mutableStateOf(Game(id=-1L, groupId = -1L, running = false))
+    var gameDurationArr = arrayOf(1, 2, 5, 10)
 
     val routeMutex = Mutex()
 
@@ -1259,6 +1269,7 @@ class MyViewModel : ViewModel() {
                     toggleGameModal(false)
                 } else if (allAccepted) {
                     if (game.running != true) {
+
                         supabase.from("games").update({
                             set("running", true)
                         }) {
@@ -1285,11 +1296,11 @@ class MyViewModel : ViewModel() {
                     val endTimeDate = formatter.parse(newGame.endTime!!)
                     val currentTime = Date()
 
-                    if (endTimeDate != null && endTimeDate.before(currentTime)) {
+                    if (endTimeDate != null && endTimeDate.before(currentTime)) { //game is done
                         Log.d("Game Time Check", "Game is done")
                         toggleStartGame(false)
                         stopGame()
-                    } else {
+                    } else { //game is ongoing
                         game = newGame
                         val hunterUser = supabase.from("users").select(){
                             filter {
@@ -1375,15 +1386,9 @@ class MyViewModel : ViewModel() {
                     Log.d("Supabase Game", "Existing game for group ${groupList[groupIndex.value].id!!} exists!")
                 } else if (groupMemberList.isNotEmpty()) {
 
-                    val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-                    val startTime = formatter.format(Date())
-                    val endTime = formatter.format(Date(System.currentTimeMillis() + 1 * 60 * 1000))
-
                     val newGame = Game(
                         groupId = groupId,
                         hunterId = uid,
-                        startTime = startTime,
-                        endTime = endTime,
                     )
                     try {
                         supabase.from("games")
@@ -1418,8 +1423,9 @@ class MyViewModel : ViewModel() {
                             )
                         )
                         game = curGame
-                        setGameEndTime(game.endTime!!)
+                        updateGameDuration()
                         toggleWaitingModal(true)
+                        toggleGameCreator(true)
 
 
                         Log.d("Supabase Game","Game $gameId successfully inserted for group $groupId!")
@@ -1479,6 +1485,8 @@ class MyViewModel : ViewModel() {
         }
     }
     suspend fun stopGame() {
+        toggleGameCreator(false)
+        toggleStartGame(false)
         if (game.id != -1L){
             try {
                 supabase.from("games").update({
@@ -1504,6 +1512,27 @@ class MyViewModel : ViewModel() {
             try {
                 supabase.from("games").update({
                     set("hunter_id", uid)
+                }) {
+                    filter {
+                        eq("id", game.id!!)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Accept Game", "${e.message}")
+            }
+        }
+    }
+    suspend fun updateGameDuration() {
+        if (game.id != -1L) {
+            try {
+                val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+
+                val startTime = formatter.format(Date())
+                val endTime = formatter.format(Date(System.currentTimeMillis() + gameDuration.value * 60 * 1000))
+
+                supabase.from("games").update({
+                    set("start_time", startTime)
+                    set("end_time", endTime)
                 }) {
                     filter {
                         eq("id", game.id!!)
