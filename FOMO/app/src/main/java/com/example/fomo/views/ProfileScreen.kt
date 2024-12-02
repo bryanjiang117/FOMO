@@ -1,8 +1,6 @@
-package com.example.fomo
+package com.example.fomo.views
 
 import android.net.Uri
-import android.graphics.Paint.Align
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -28,7 +26,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.PopupProperties
 import cafe.adriel.voyager.core.screen.Screen
 import coil.compose.rememberAsyncImagePainter
-import com.example.fomo.models.MyViewModel
+import com.example.fomo.LoadingScreen
+import com.example.fomo.R
+import com.example.fomo.viewmodel.MyViewModel
 
 
 class ProfileScreen(private val myViewModel: MyViewModel) : Screen {

@@ -1,4 +1,4 @@
-package com.example.fomo.const
+package com.example.fomo.consts
 import androidx.compose.ui.graphics.Color
 
 object Colors {

@@ -1,6 +1,5 @@
-package com.example.fomo
+package com.example.fomo.views
 
-import android.graphics.Paint.Align
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +19,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.Text
@@ -29,7 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import cafe.adriel.voyager.core.screen.Screen
-import com.example.fomo.models.MyViewModel
+import com.example.fomo.viewmodel.MyViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,17 +36,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.fomo.const.Colors
-import cafe.adriel.voyager.navigator.CurrentScreen
+import com.example.fomo.consts.Colors
 import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
+import com.example.fomo.R
 
-class SignUp(private val myViewModel: MyViewModel) : Screen {
+class SignUpScreen(private val myViewModel: MyViewModel) : Screen {
   @OptIn(ExperimentalMaterial3Api::class)
   @Composable
   override fun Content() {
@@ -154,7 +150,7 @@ class SignUp(private val myViewModel: MyViewModel) : Screen {
             myViewModel.signUp(context, username, password) {success ->
               showError = !success
               if (success) {
-                navigator!!.push(SignIn(myViewModel))
+                navigator!!.push(SignInScreen(myViewModel))
               } else {
                 Log.e("AuthFlow", "Sign up failed")
               }
@@ -184,7 +180,7 @@ class SignUp(private val myViewModel: MyViewModel) : Screen {
 
         OutlinedButton(
           onClick = {
-            navigator!!.push(SignIn(myViewModel))
+            navigator!!.push(SignInScreen(myViewModel))
           },
           shape = RoundedCornerShape(8.dp),
           colors = ButtonDefaults.buttonColors(

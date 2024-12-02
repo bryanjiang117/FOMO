@@ -1,14 +1,14 @@
-package com.example.fomo.models
+package com.example.fomo.entities
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Friendship(
+data class GroupLink(
   @SerialName("id") val id: Long? = null,                                 // Primary key
   @SerialName("created_at") val createdAt: String, // Timestamp for creation date
-  @SerialName("requester_id") val requesterId: String,  // ID of the user who sent the request
-  @SerialName("receiver_id") val receiverId: String,    // ID of the user receiving the request
-  @SerialName("accept_date") val acceptDate: String? = null, // Timestamp for acceptance date
+  @SerialName("uid") val userId: String,  // ID of the user
+  @SerialName("sender_uid") val senderUid: String, // ID of the sender of request
+  @SerialName("group_id") val groupId: Long,    // ID of the group
   @SerialName("accepted") val accepted: Boolean       // Boolean indicating if the request was accepted
 )

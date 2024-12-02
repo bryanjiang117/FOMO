@@ -1,4 +1,4 @@
-package com.example.fomo.models
+package com.example.fomo.entities
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -10,5 +10,5 @@ data class Place(
   @SerialName("latitude") val latitude: Double,
   @SerialName("longitude") val longitude: Double,
   @SerialName("radius") val radius: Double,
-  @SerialName("owner_id") val owner_id: String,
+  @SerialName("group_id") val groupId: Long,
 )

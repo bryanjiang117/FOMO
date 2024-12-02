@@ -1,4 +1,4 @@
-package com.example.fomo.models
+package com.example.fomo.entities
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

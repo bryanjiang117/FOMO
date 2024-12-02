@@ -1,6 +1,5 @@
-package com.example.fomo.models
+package com.example.fomo.viewmodel
 
-import android.Manifest
 import android.util.Log
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -51,34 +50,33 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.io.InputStream
 import android.content.ContentResolver
 import android.content.Context
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.snapshots.SnapshotStateMap
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.example.fomo.R
-import com.example.fomo.showNotification
+import com.example.fomo.entities.DirectionsResponse
+import com.example.fomo.entities.Friendship
+import com.example.fomo.entities.GeocodeResponse
+import com.example.fomo.entities.Group
+import com.example.fomo.entities.Game
+import com.example.fomo.entities.GameLink
+import com.example.fomo.entities.GroupLink
+import com.example.fomo.entities.Place
+import com.example.fomo.entities.Status
+import com.example.fomo.entities.User
+import com.example.fomo.views.showNotification
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import java.util.Objects.isNull
 
 class MyViewModel : ViewModel() {
-
 
     private val _bitmapDescriptor = mutableStateOf<BitmapDescriptor?>(null)
     private val _sessionRestored = MutableStateFlow(false) //session save
@@ -498,7 +496,8 @@ class MyViewModel : ViewModel() {
                     val userObject = supabase.auth.retrieveUserForCurrentSession(updateSession = true)
                     val users = supabase.from("users")
 
-                    users.insert(User(
+                    users.insert(
+                        User(
                         uid = userObject.id,
                         displayName = email,
                         createdAt = dateFormat.format(Date()),
@@ -508,7 +507,8 @@ class MyViewModel : ViewModel() {
                         latitude = 0.0,
                         longitude = 0.0,
                         status_id = 1,
-                    ))
+                    )
+                    )
 
                     Log.d("SupabaseAuth", "User signed up created and added to DB: $email")
                     onResult(true)
@@ -606,11 +606,15 @@ class MyViewModel : ViewModel() {
     fun fetchPlaces() {
         viewModelScope.launch {
             try {
-                places = supabase.from("places").select() {
-                    filter {
-                        eq("owner_id", uid)
-                    }
-                }.decodeList<Place>()
+                if (groupIndex.value == -1) {
+                    places = emptyList<Place>()
+                } else {
+                    places = supabase.from("places").select() {
+                        filter {
+                            eq("group_id", groupList[groupIndex.value].id!!.toLong())
+                        }
+                    }.decodeList<Place>()
+                }
                 Log.d("Supabase fetchPlaces()", "Places fetched")
             } catch (e: Exception) {
                 Log.e("Supabase fetchPlaces()", "Error: ${e.message}")
@@ -618,29 +622,39 @@ class MyViewModel : ViewModel() {
         }
     }
 
-    fun setPlace(name:String, coords: LatLng?, radius: Double?) {
+    // create place on current location
+    fun createPlace(name:String, onResult: (Boolean) -> Unit) {
 
         viewModelScope.launch {
             try {
-                val newPlace = Place(name = name, latitude = coords?.latitude ?: userLatitude,
-                    longitude = coords?.longitude ?: userLongitude,  radius = radius ?: 0.001, owner_id = uid)
+                val newPlace = Place(name = name, latitude = userLatitude,
+                    longitude = userLongitude,  radius = 0.001, groupId = groupList[groupIndex.value].id!!.toLong())
                 supabase.from("places").insert(newPlace)
+                onResult(true)
             } catch (e: Exception) {
+                onResult(false)
                 Log.e("Supabase setPlace()", "Error: ${e.message}")
             }
         }
     }
 
-    // Checks if the current user location is in the given place
-    fun isInPlace(place: Place): Boolean {
-        return ((place.latitude - place.radius < userLatitude &&
-                userLatitude < place.latitude + place.radius) &&
-                (place.longitude - place.radius < userLongitude &&
-                    userLongitude < place.longitude + place.radius))
-
+    // Checks if the current user location is in a place in places
+    fun getUserPlace(loc: LatLng, me: Boolean): Place? {
+        for (place in places) {
+            if (((place.latitude - place.radius < loc.latitude &&
+                        loc.latitude < place.latitude + place.radius) &&
+                        (place.longitude - place.radius < loc.longitude &&
+                                loc.longitude < place.longitude + place.radius))) {
+                if (me) {
+                    predictStatus(place.name)
+                }
+                return place
+            }
+        }
+        return null
     }
 
-    fun removePlace(id: Long) {
+    fun removePlace(id: Long, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
                 supabase.from("places").delete() {
@@ -648,10 +662,32 @@ class MyViewModel : ViewModel() {
                         eq("id", id)
                     }
                 }
+                onResult(true)
             } catch (e: Exception) {
+                onResult(false)
                 Log.e("Supabase removePlace()", "Error: ${e.message}")
             }
         }
+    }
+
+    fun predictStatus(placeName: String): String {
+        val upperPlaceName = placeName.uppercase()
+        var predictedStatus = ""
+        if (upperPlaceName == "HOME") {
+            predictedStatus = "Chilling"
+        } else if (upperPlaceName == "GYM") {
+            predictedStatus = "Exercising"
+        } else if (upperPlaceName == "SCHOOL") {
+            predictedStatus = "Studying"
+        } else if (upperPlaceName == "WORK") {
+            predictedStatus = "Working"
+        } else if (upperPlaceName == "RESTAURANT") {
+            predictedStatus = "Eating"
+        }
+        if (predictedStatus != "") {
+            updateStatus(statusList.filter {it.description == predictedStatus}[0])
+        }
+        return predictedStatus
     }
 
     fun fetchFriends(context: Context) {
@@ -807,7 +843,6 @@ class MyViewModel : ViewModel() {
                 fetchGames(context)
                 updateGame()
                 fetchFriends(context)
-                fetchPlaces()
                 fetchGroups(context)
 
                 Log.d("SupabaseConnection", "Friends fetched: $friendsList")
@@ -975,6 +1010,15 @@ class MyViewModel : ViewModel() {
                         eq("username", username)
                     }
                 }.decodeSingle<User>()
+                val existingRequestCheck = supabase.from("friendship").select() { // Check if the same request already exists
+                    filter {
+                        eq("requester_id", uid)
+                        eq("receiver_id", receiver.uid)
+                    }
+                }.decodeList<Friendship>()
+                if (existingRequestCheck.isNotEmpty()) { // then just say success bc it already exists
+                    onResult(true)
+                }
                 val oppositeCheck = supabase.from("friendship").select() { // check if opposite request exists
                     filter {
                         eq("requester_id", receiver.uid)

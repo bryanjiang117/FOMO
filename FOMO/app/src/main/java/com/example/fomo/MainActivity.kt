@@ -7,15 +7,12 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -49,7 +46,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,23 +65,20 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
-import androidx.core.content.getSystemService
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
-import com.example.fomo.models.MyViewModel
-import com.example.fomo.models.User
-import com.example.fomo.const.Colors
+import com.example.fomo.viewmodel.MyViewModel
+import com.example.fomo.consts.Colors
 import com.example.fomo.ui.theme.FOMOTheme
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.postgrest.postgrest
+import com.example.fomo.util.LocationHelper
+import com.example.fomo.views.FriendsScreen
+import com.example.fomo.views.MapScreen
+import com.example.fomo.views.ProfileScreen
+import com.example.fomo.views.SettingsScreen
+import com.example.fomo.views.SignInScreen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.*
 
@@ -132,7 +125,12 @@ class MainActivity : ComponentActivity() {
         val myViewModel: MyViewModel = viewModel()
 
         FOMOTheme {
-          LocationHelper.LocationChecker(locationPermissionsAlreadyGranted, backgroundLocationGranted, myViewModel,this)
+          LocationHelper.LocationChecker(
+            locationPermissionsAlreadyGranted,
+            backgroundLocationGranted,
+            myViewModel,
+            this
+          )
           NavigatorFun(myViewModel = myViewModel)
         }
       }
@@ -240,7 +238,7 @@ fun NavigatorFun(myViewModel: MyViewModel) {
     // Show a loading indicator while session restoration is in progress
     LoadingScreen()
   } else {
-    val startScreen = if (isSignedIn) MapScreen(myViewModel) else SignIn(myViewModel)
+    val startScreen = if (isSignedIn) MapScreen(myViewModel) else SignInScreen(myViewModel)
     Navigator(startScreen) { Content(myViewModel) }
   }
 }

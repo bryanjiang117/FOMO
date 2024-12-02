@@ -1,4 +1,4 @@
-package com.example.fomo
+package com.example.fomo.views
 
 import android.content.Context
 import android.content.Intent
@@ -10,21 +10,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import cafe.adriel.voyager.core.screen.Screen
-import android.util.Log
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 //import androidx.compose.ui.tooling.data.EmptyGroup.data
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import android.provider.Settings
 import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,9 +29,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
-import com.example.fomo.const.Colors
-import com.example.fomo.models.MyViewModel
+import com.example.fomo.consts.Colors
+import com.example.fomo.viewmodel.MyViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import com.example.fomo.util.LocationHelper
 
 
 class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
@@ -44,11 +41,16 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
     val context = LocalContext.current
     val navigator = LocalNavigator.current
     var isLocationSharingEnabled by remember { mutableStateOf(
-      LocationHelper.areLocationPermissionsGranted(context))
+      LocationHelper.areLocationPermissionsGranted(context)
+    )
     }
     var isNotificationSharingEnabled by remember { mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled()) }
     val foreground by remember { mutableStateOf(LocationHelper.areLocationPermissionsGranted(context)) }
-    val background by remember { mutableStateOf(LocationHelper.isBackgroundLocationPermissionGranted(context)) }
+    val background by remember { mutableStateOf(
+      LocationHelper.isBackgroundLocationPermissionGranted(
+        context
+      )
+    ) }
 
 
     Column(
@@ -100,7 +102,7 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
           checked = isNotificationSharingEnabled,
           onCheckedChange = { isEnabled ->
             isNotificationSharingEnabled = isEnabled
-
+            openSetting(context)
           }
         )
       }
@@ -110,7 +112,7 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
         onClick = {
           // log out function here!
           myViewModel.logout(context)
-          navigator!!.push(SignIn(myViewModel))
+          navigator!!.push(SignInScreen(myViewModel))
         },
         colors = ButtonDefaults.buttonColors(
           containerColor = Colors.primary,
