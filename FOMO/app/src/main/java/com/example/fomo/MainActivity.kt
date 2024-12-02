@@ -2,6 +2,7 @@ package com.example.fomo
 
 import android.Manifest
 import android.annotation.SuppressLint
+import androidx.compose.ui.window.Dialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -17,6 +18,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +26,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.People
@@ -44,9 +48,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
@@ -188,6 +194,8 @@ class MainActivity : ComponentActivity() {
             myViewModel.fetchFriends(context)
             myViewModel.fetchPlaces()
             myViewModel.fetchGroups(context)
+            myViewModel.updateGame()
+            myViewModel.fetchGames(context)
             LocationHelper.getPreciseLocation(this@MainActivity, myViewModel)
             delay(5000)
             Log.d("updateData", "data has been updated")
@@ -229,6 +237,124 @@ fun NavigatorFun(myViewModel: MyViewModel) {
   }
 }
 
+@Composable
+fun GameModal(myViewModel: MyViewModel){
+  val isOpen by myViewModel.isGameModalVisible.collectAsState()
+  val coroutineScope = rememberCoroutineScope()
+
+  if (isOpen) {
+    Dialog(
+      onDismissRequest = {
+        coroutineScope.launch {
+          myViewModel.declineGameRequest()
+        }
+      }
+    ){
+      Box(
+        modifier = Modifier
+          .clip(RoundedCornerShape(16.dp))
+          .background(Color.White)
+          .padding(16.dp)
+      ) {
+        Column(
+          verticalArrangement = Arrangement.SpaceBetween,
+          horizontalAlignment = Alignment.CenterHorizontally,
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Text(
+            text = "Game request",
+            fontSize = 18.sp,
+            modifier = Modifier.padding(bottom = 16.dp)
+          )
+
+          // Buttons Row
+          Row(
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier.fillMaxWidth()
+          ) {
+
+            Button(
+              onClick = {
+                coroutineScope.launch {
+                  myViewModel.declineGameRequest()
+                }
+              },
+              colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Red
+              )
+            ) {
+              Text(text = "Decline")
+            }
+            Button(
+              onClick = {
+                coroutineScope.launch {
+                  myViewModel.acceptGameRequest()
+                }
+              },
+              colors = ButtonDefaults.buttonColors(
+                containerColor = Colors.primary
+              )
+            ) {
+              Text(text = "Accept")
+            }
+          }
+        }
+      }
+    }
+  }
+}
+@Composable
+fun WaitingModal(myViewModel: MyViewModel){
+  val isOpen by myViewModel.isWaitingModalVisible.collectAsState()
+  val coroutineScope = rememberCoroutineScope()
+
+  if (isOpen) {
+    Dialog(
+      onDismissRequest = {
+        coroutineScope.launch {
+          myViewModel.toggleWaitingModal(false)
+        }
+      }
+    ){
+      Box(
+        modifier = Modifier
+          .clip(RoundedCornerShape(16.dp))
+          .background(Color.White)
+          .padding(16.dp)
+      ) {
+        Column(
+          verticalArrangement = Arrangement.SpaceBetween,
+          horizontalAlignment = Alignment.CenterHorizontally,
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Text(
+            text = "Waiting for other players...",
+            fontSize = 18.sp,
+            modifier = Modifier.padding(bottom = 16.dp)
+          )
+
+          Row(
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier.fillMaxWidth()
+          ) {
+            Button(
+              onClick = {
+                coroutineScope.launch {
+                  myViewModel.declineGameRequest()
+                }
+              },
+              colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Red
+              )
+            ) {
+              Text(text = "Cancel Game")
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 @Composable
 fun Content(myViewModel: MyViewModel) {
@@ -245,6 +371,9 @@ fun Content(myViewModel: MyViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally) {
         CurrentScreen() // Show the current screen
       }
+
+      GameModal(myViewModel)
+      WaitingModal(myViewModel)
     }
   } else {
     CurrentScreen() // Show the current screen

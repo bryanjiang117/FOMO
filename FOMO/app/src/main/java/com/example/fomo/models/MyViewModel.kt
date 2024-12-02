@@ -60,6 +60,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.core.app.NotificationCompat
@@ -73,19 +75,52 @@ import com.example.fomo.R
 import com.example.fomo.showNotification
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import java.util.Objects.isNull
 
 class MyViewModel : ViewModel() {
 
 
     private val _bitmapDescriptor = mutableStateOf<BitmapDescriptor?>(null)
-    private val _sessionRestored = MutableStateFlow(false)
-    private val _isDataLoaded = MutableStateFlow(false)
-    private var previousGroupRequestCount by mutableStateOf(0)
-    private var previousFriendRequestCount by mutableStateOf(0)
+    private val _sessionRestored = MutableStateFlow(false) //session save
+    private val _isDataLoaded = MutableStateFlow(false) //fetch database
+    private val _isGameModalVisible = MutableStateFlow(false) //game popup
+    private val _startGame = MutableStateFlow(false) //playing a game
+    private val _isWaitingModalVisible = MutableStateFlow(false) //game
+    private val _gameEndTime = MutableStateFlow("") //game end time
+    private val _hunterName = MutableStateFlow("")
+
+    private var previousGroupRequestCount by mutableIntStateOf(0)
+    private var previousFriendRequestCount by mutableIntStateOf(0)
+    private val _groupIndex = MutableStateFlow(-1) // Initially no group is selected
 
     val isDataLoaded: StateFlow<Boolean> = _isDataLoaded
     var bitmapDescriptor by _bitmapDescriptor
     val sessionRestored: StateFlow<Boolean> = _sessionRestored
+    val groupIndex: StateFlow<Int> = _groupIndex
+    val isGameModalVisible: StateFlow<Boolean> = _isGameModalVisible
+    val isWaitingModalVisible: StateFlow<Boolean> = _isWaitingModalVisible
+    val startGame: StateFlow<Boolean> = _startGame
+    val gameEndTime: StateFlow<String> = _gameEndTime
+    val hunterName: StateFlow<String> = _hunterName
+
+    fun selectGroup(index: Int) {
+        _groupIndex.value = index
+    }
+    fun toggleGameModal(visible: Boolean) {
+        _isGameModalVisible.value = visible
+    }
+    fun toggleStartGame(bool: Boolean) {
+        _startGame.value = bool
+    }
+    fun toggleWaitingModal(visible: Boolean){ //if game running is null (pending) and current user already accepted the game
+        _isWaitingModalVisible.value = visible
+    }
+    fun setGameEndTime(time: String) {
+        _gameEndTime.value = time
+    }
+    fun setHunterName(name: String){
+        _hunterName.value = name
+    }
 
     suspend fun uriToBitmapDescriptor(context: Context, imageUri: String): BitmapDescriptor? {
 
@@ -228,7 +263,7 @@ class MyViewModel : ViewModel() {
     var route by mutableStateOf<List<LatLng>?>(null)
     var mode by mutableStateOf("walking")
     var places by mutableStateOf<List<Place>>(emptyList())
-    var groupIndex by mutableIntStateOf(-1)
+    var game by mutableStateOf(Game(id=-1L, groupId = -1L, running = false))
 
     val routeMutex = Mutex()
 
@@ -664,7 +699,7 @@ class MyViewModel : ViewModel() {
 
                 previousFriendRequestCount = tempRequesters.size
 
-
+                Log.d("Fetch Friends", "fetched friends")
             } catch (e: Exception) {
                 Log.e("SupabaseConnection", "Failed to connect to database: ${e.message}")
             }
@@ -759,6 +794,8 @@ class MyViewModel : ViewModel() {
                 imageUri = Uri.parse(getImgUrl(uid))
 
                 fetchRoute()
+                fetchGames(context)
+                updateGame()
                 fetchFriends(context)
                 fetchPlaces()
                 fetchGroups(context)
@@ -1181,6 +1218,299 @@ class MyViewModel : ViewModel() {
             } catch(e: Exception) {
                 Log.e("SupabaseConnection", "DB Error: ${e.message}")
                 onResult(emptyList())
+            }
+        }
+    }
+    /*
+
+        3 states of game
+
+        running = true
+            case 1 waiting for users to accept request
+            case 2 users accepted and game is ongoing
+        running = false
+            case 1 a user declined the request. current game is set to not running and we can retract all the requests for the current game
+            case 2 game has been completed (time's up)
+     */
+
+    // check the game links to determine if we should cancel or start the game
+    suspend fun updateGame() {
+        try {
+            if (game.id != -1L) {
+                Log.d("Update game", "attempt to update game ${game.id}")
+                val gameLinks = supabase.from("game_links").select(){
+                    filter{
+                        eq("game_id", game.id!!)
+                    }
+                }.decodeList<GameLink>()
+
+                val declined = gameLinks.any { it.accepted == false }
+                val allAccepted = gameLinks.all { it.accepted == true }
+
+                if (declined && game.running != false) {
+                    supabase.from("games").update({
+                        set("running", false)
+                    }) {
+                        filter {
+                            eq("id", game.id!!)
+                        }
+                    }
+                    toggleStartGame(false)
+                    toggleGameModal(false)
+                } else if (allAccepted) {
+                    if (game.running != true) {
+                        supabase.from("games").update({
+                            set("running", true)
+                        }) {
+                            filter {
+                                eq("id", game.id!!)
+                            }
+                        }
+                    }
+
+                    toggleStartGame(true)
+                    toggleGameModal(false)
+                    toggleWaitingModal(false)
+                }
+                if (startGame.value) {
+                    val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+
+                    val newGame = supabase.from("games").select(){
+                        filter{
+                            eq("id", game.id!!)
+                        }
+                    }.decodeSingle<Game>()
+
+
+                    val endTimeDate = formatter.parse(newGame.endTime!!)
+                    val currentTime = Date()
+
+                    if (endTimeDate != null && endTimeDate.before(currentTime)) {
+                        Log.d("Game Time Check", "Game is done")
+                        toggleStartGame(false)
+                        stopGame()
+                    } else {
+                        game = newGame
+                        val hunterUser = supabase.from("users").select(){
+                            filter {
+                                eq("uid", game.hunterId!!)
+                            }
+                        }.decodeSingle<User>()
+                        setHunterName(hunterUser.displayName)
+                        setGameEndTime(game.endTime!!)
+                    }
+                }
+
+            }
+        } catch (e: Exception) {
+            Log.e("Update Game", "${e.message}")
+        }
+
+    }
+    suspend fun fetchGames(context: Context) { //get pending requests
+            try {
+                // look for pending requests
+                val gameLinks = supabase.from("game_links").select() {
+                    filter {
+                        and {
+                            eq("uid", uid)
+                            exact("accepted", null)
+                        }
+
+                    }
+                }.decodeList<GameLink>()
+
+                val tempGames = mutableListOf<Game>()
+
+                for (link in gameLinks) {
+                    Log.d("fetch location", link.toString())
+                    val nextGame = supabase.from("games").select(){
+                        filter {
+                            and {
+                                eq("id", link.gameId)
+                                isNull("running")
+                            }
+
+                        }
+                    }.decodeSingleOrNull<Game>()
+
+                    if (nextGame != null){
+                        tempGames.add(nextGame)
+                    }
+                }
+                if (tempGames.isNotEmpty()){
+                    game = tempGames[0]
+                    toggleGameModal(true)
+                }
+
+            } catch (e: Exception) {
+                Log.e("Fetch Games Error", "${e.message}")
+            }
+
+    }
+
+    fun createGame(context: Context, onResult: (Boolean) -> Unit){
+        // user creates the game
+        viewModelScope.launch {
+            try {
+                if (groupIndex.value == -1 ){
+                    throw IllegalStateException("game insertion fail")
+                }
+                val groupId = groupList[groupIndex.value].id!!
+
+                val response = supabase.from("games").select() {
+                    filter {
+                        eq("group_id", groupId)
+                        or {
+                            eq("running", true)
+                            isNull("running")
+                        }
+
+                    }
+                }.decodeSingleOrNull<Game>()
+
+                getGroupMembers(context, groupId) {_ ->}
+
+                if (response != null) {
+                    Log.d("Supabase Game", "Existing game for group ${groupList[groupIndex.value].id!!} exists!")
+                } else if (groupMemberList.isNotEmpty()) {
+
+                    val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                    val startTime = formatter.format(Date())
+                    val endTime = formatter.format(Date(System.currentTimeMillis() + 1 * 60 * 1000))
+
+                    val newGame = Game(
+                        groupId = groupId,
+                        hunterId = uid,
+                        startTime = startTime,
+                        endTime = endTime,
+                    )
+                    try {
+                        supabase.from("games")
+                            .insert(newGame)
+
+                        val curGame = supabase.from("games").select() {
+                            filter {
+                                eq("group_id", groupId)
+                                isNull("running")
+                            }
+                        }.decodeSingle<Game>()
+
+                        val gameId: Long = curGame.id ?: throw IllegalStateException("game insertion fail")
+
+                        for(friend in groupMemberList) {
+                            val newGameLink = GameLink(
+                                createdAt = dateFormat.format(Date()),
+                                uid = friend.uid,
+                                gameId = gameId,
+                                groupId = groupId,
+                                accepted = null,
+                            )
+                            supabase.from("game_links").insert(newGameLink)
+                        }
+                        supabase.from("game_links").insert(
+                            GameLink(
+                                createdAt = dateFormat.format(Date()),
+                                uid = uid,
+                                gameId = gameId,
+                                groupId = groupId,
+                                accepted = true,
+                            )
+                        )
+                        game = curGame
+                        setGameEndTime(game.endTime!!)
+                        toggleWaitingModal(true)
+
+
+                        Log.d("Supabase Game","Game $gameId successfully inserted for group $groupId!")
+                    } catch (e: Exception) {
+                        Log.e("Supabase Game","Failed to insert game : ${e.message}")
+                    }
+                } else {
+                    Log.d("Supabase Game", "2 or more members needed for group $groupId")
+                }
+
+            } catch (e: Exception) {
+                Log.e("Supabase Game Request", "err: ${e.message}" )
+                onResult(false)
+            }
+        }
+    }
+    suspend fun declineGameRequest(){
+        if (game.id != -1L){
+            try {
+                supabase.from("game_links").update({
+                    set("accepted", false)
+                }) {
+                    filter {
+                        eq("uid", uid)
+                        eq("game_id", game.id!!)
+                    }
+                }
+                toggleWaitingModal(false)
+                toggleStartGame(false)
+
+            } catch (e: Exception) {
+                Log.e("Accept Game", "${e.message}")
+            }
+            toggleGameModal(false)
+        } else {
+            throw IllegalStateException("failed to accept game")
+        }
+    }
+    suspend fun acceptGameRequest(){
+        if (game.id != -1L){
+            try {
+                supabase.from("game_links").update({
+                    set("accepted", true)
+                }) {
+                    filter {
+                        eq("uid", uid)
+                        eq("game_id", game.id!!)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Accept Game", "${e.message}")
+            }
+            toggleGameModal(false)
+            toggleWaitingModal(true)
+        } else {
+            throw IllegalStateException("failed to accept game")
+        }
+    }
+    suspend fun stopGame() {
+        if (game.id != -1L){
+            try {
+                supabase.from("game").update({
+                    set("running", false)
+                }) {
+                    filter {
+                        eq("game_id", game.id!!)
+                    }
+                }
+                game = Game(
+                    id = -1L,
+                    groupId = -1L
+                )
+                toggleStartGame(false)
+                Log.d("STop Game", "game stopped")
+            } catch (e: Exception) {
+                Log.e("Accept Game", "${e.message}")
+            }
+        }
+    }
+    suspend fun userTagged() {
+        if (game.id != -1L){
+            try {
+                supabase.from("game").update({
+                    set("hunter_id", uid)
+                }) {
+                    filter {
+                        eq("game_id", game.id!!)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Accept Game", "${e.message}")
             }
         }
     }

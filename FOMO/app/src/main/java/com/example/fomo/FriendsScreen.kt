@@ -87,6 +87,7 @@ package com.example.fomo
   import androidx.compose.material.icons.filled.PersonAdd
   import androidx.compose.material.icons.filled.PersonAddAlt
   import androidx.compose.material.icons.filled.PersonAddAlt1
+  import androidx.compose.material.icons.filled.SportsEsports
   import androidx.compose.material.icons.outlined.PersonAdd
   import androidx.compose.material3.Button
   import androidx.compose.material3.ButtonDefaults
@@ -168,6 +169,14 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
             friendsList.value,
             myViewModel
           )
+//          Button(
+//            onClick = myViewModel.createGame(LocalContext.current, myViewModel.uid, myViewModel.group),
+//            colors = ButtonDefaults.buttonColors(
+//              containerColor = Colors.primary
+//            ),
+//            modifier = Modifier.height(50.dp),
+//            shape = RoundedCornerShape(8.dp)
+//          )
         }
       } else {
         LoadingScreen()
@@ -194,6 +203,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
   fun Nav(openAddFriend: () -> Unit, openCreateGroup: () -> Unit, openGroupRequest: (Pair<User, Group>) -> Unit,
           friendsList: MutableState<List<User>>, myViewModel: MyViewModel) {
     var expanded by remember { mutableStateOf(false) }
+    val groupIndex by myViewModel.groupIndex.collectAsState()
 
     val context = LocalContext.current
 
@@ -208,10 +218,10 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
         onExpandedChange = {
           expanded = !expanded
         },
-        modifier = Modifier.width(250.dp)
+        modifier = Modifier.width(200.dp)
       ) {
         OutlinedTextField(
-          value = if (myViewModel.groupIndex == -1) "All Friends" else myViewModel.groupList[myViewModel.groupIndex].name,
+          value = if (groupIndex == -1) "All Friends" else myViewModel.groupList[groupIndex].name,
           onValueChange = {},
           readOnly = true,
           trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -234,10 +244,10 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
             text = {
               Text(
                 text = "All Friends",
-                fontWeight = if (myViewModel.groupIndex == -1) FontWeight.Bold else FontWeight.Normal
+                fontWeight = if (groupIndex == -1) FontWeight.Bold else FontWeight.Normal
               )},
             onClick = {
-              myViewModel.groupIndex = -1
+              myViewModel.selectGroup(-1)
               expanded = false
               friendsList.value = myViewModel.friendsList
             }
@@ -271,10 +281,10 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
               text = {
                 Text(
                   text = group.name,
-                  fontWeight = if (i == myViewModel.groupIndex) FontWeight.Bold else FontWeight.Normal
+                  fontWeight = if (i == groupIndex) FontWeight.Bold else FontWeight.Normal
                 )},
               onClick = {
-                myViewModel.groupIndex = i
+                myViewModel.selectGroup(i)
                 myViewModel.getGroupMembers(context, myViewModel.groupList[i].id!!) { result ->
                   friendsList.value = result
                 }
@@ -301,15 +311,34 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
         }
       }
 
+      if (groupIndex != -1) {
+        Button(
+          onClick = {
+            myViewModel.createGame(context) {_->}
+          },
+          colors = ButtonDefaults.buttonColors(
+            containerColor = Colors.primary
+          ),
+          modifier = Modifier
+            .height(50.dp)
+            .padding(horizontal = 8.dp),
+          shape = RoundedCornerShape(8.dp)
+        ) {
+            Icon(imageVector = Icons.Default.SportsEsports, contentDescription = "Game")
+        }
+      }
+
       Button(
         onClick = openAddFriend,
         colors = ButtonDefaults.buttonColors(
           containerColor = Colors.primary
         ),
-        modifier = Modifier.height(50.dp),
+        modifier = Modifier
+          .height(50.dp)
+          .padding(horizontal = 8.dp),
         shape = RoundedCornerShape(8.dp)
       ) {
-        if (myViewModel.groupIndex == -1) {
+        if (groupIndex == -1) {
           Icon(imageVector = Icons.Default.PersonAdd, contentDescription = "Add Friend")
         } else {
           Icon(imageVector = Icons.Default.PersonAddAlt1, contentDescription = "Add Friend to Group")
@@ -328,6 +357,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
     var selectedFriend by remember {mutableStateOf<User?>(null)}
     val myLocation = myViewModel.center
     val friendsWithDistance = mutableListOf<Pair<User, Double>>()
+    val groupIndex by myViewModel.groupIndex.collectAsState()
 
     // Start of Remove Friend Confirmation
     fun openRemoveFriendConfirmation(friend: User) {
@@ -356,7 +386,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
     // End of Remove Friend Confirmation
 
     // List of Friend Requests (above friends)
-    if (myViewModel.groupIndex == -1) {
+    if (groupIndex == -1) {
       Column(
         verticalArrangement = Arrangement.spacedBy(16.dp)
       ) {
@@ -484,7 +514,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
             )
           }
           Spacer(modifier = Modifier.weight(1f))
-          if (myViewModel.groupIndex == -1) {
+          if (groupIndex == -1) {
             Box {
               Icon(
                 imageVector = Icons.Default.MoreVert,
@@ -524,6 +554,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
       var text by remember { mutableStateOf("") }
       var expanded by remember { mutableStateOf(false) }
       var selectedFriend by remember { mutableStateOf<User?>(null)}
+      val groupIndex by myViewModel.groupIndex.collectAsState()
 
       Dialog(onDismissRequest = onDismissRequest) {
         Box(
@@ -539,13 +570,13 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
               .fillMaxSize()
           ) {
             Text(
-              text = if (myViewModel.groupIndex == -1) "Add Friend" else "Add Friend to Group",
+              text = if (groupIndex == -1) "Add Friend" else "Add Friend to Group",
               fontWeight = FontWeight.Bold,
               fontSize = 24.sp,
               modifier = Modifier.padding(top = 8.dp)
             )
 
-            if (myViewModel.groupIndex == -1) {
+            if (groupIndex == -1) {
               OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
@@ -618,7 +649,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
             ) {
               Button(
                 onClick = {
-                  if (myViewModel.groupIndex == -1) {
+                  if (groupIndex == -1) {
                     myViewModel.createRequest(context, text) { success ->
                       if (success) {
                         Toast.makeText(context, "Sent Friend Request", Toast.LENGTH_SHORT).show()
@@ -628,7 +659,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
                     }
                   } else {
                     if (selectedFriend != null) {
-                      myViewModel.createGroupRequest(context, myViewModel.groupList[myViewModel.groupIndex].id!!, selectedFriend!!.uid) { success ->
+                      myViewModel.createGroupRequest(context, myViewModel.groupList[groupIndex].id!!, selectedFriend!!.uid) { success ->
                         if (success) {
                           Toast.makeText(context, "Sent Invite to Group", Toast.LENGTH_SHORT).show()
                         } else {
@@ -662,6 +693,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
   @Composable
   fun CreateGroup(isOpen: Boolean, onDismissRequest: () -> Unit, friendsList: MutableState<List<User>>,
                   myViewModel: MyViewModel) {
+    val groupIndex by myViewModel.groupIndex.collectAsState()
     if (isOpen) {
       val context = LocalContext.current
       var text by remember { mutableStateOf("") }
@@ -710,7 +742,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
                       Toast.makeText(context, "Group Created", Toast.LENGTH_LONG).show()
                       myViewModel.getGroupMembers(context, result) { members ->
                         friendsList.value = members
-                        myViewModel.groupIndex = myViewModel.groupList.indexOfFirst { it.id == result }
+                        myViewModel.selectGroup(myViewModel.groupList.indexOfFirst { it.id == result })
                       }
                     } else {
                       Toast.makeText(context, "Error: Something went wrong", Toast.LENGTH_SHORT)
@@ -794,7 +826,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
                         Toast.makeText(context, "Request Accepted", Toast.LENGTH_SHORT).show()
                         myViewModel.getGroupMembers(context, result) { members ->
                           friendsList.value = members
-                          myViewModel.groupIndex = myViewModel.groupList.indexOfFirst { it.id == result }
+                          myViewModel.selectGroup(myViewModel.groupList.indexOfFirst { it.id == result })
                         }
                       } else {
                         Toast.makeText(context, "Error: Something went wrong", Toast.LENGTH_SHORT)
