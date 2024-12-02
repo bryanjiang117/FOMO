@@ -421,37 +421,39 @@ fun Map(myViewModel: MyViewModel, friendLocation: LatLng?) {
     }
 
     // Places dropdown
-    Box(
-      modifier = Modifier
-        .align(Alignment.BottomStart)
-    ) {
+    if (myViewModel.groupIndex != -1) {
       Box(
         modifier = Modifier
-          .padding(6.dp)
-          .border(
-            width = 1.dp, // Set the border width
-            color = Colors.primary, // Choose your border color
-            shape = RoundedCornerShape(24.dp) // Match the button's corner shape
-          )
+          .align(Alignment.BottomStart)
       ) {
-        Button(
-          colors = ButtonDefaults.buttonColors(
-            containerColor = Color.White,
-            contentColor = Color.Black,
-          ),
-          shape = RoundedCornerShape(24.dp),
-          onClick = { placesExpanded = !placesExpanded },
+        Box(
           modifier = Modifier
-            .padding(0.dp) // No padding inside the Box
+            .padding(6.dp)
+            .border(
+              width = 1.dp, // Set the border width
+              color = Colors.primary, // Choose your border color
+              shape = RoundedCornerShape(24.dp) // Match the button's corner shape
+            )
         ) {
-          Text(
-            text = "Places",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Normal,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
-          )
+          Button(
+            colors = ButtonDefaults.buttonColors(
+              containerColor = Color.White,
+              contentColor = Color.Black,
+            ),
+            shape = RoundedCornerShape(24.dp),
+            onClick = { placesExpanded = !placesExpanded },
+            modifier = Modifier
+              .padding(0.dp) // No padding inside the Box
+          ) {
+            Text(
+              text = "Places",
+              fontSize = 14.sp,
+              fontWeight = FontWeight.Normal,
+              modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+            )
+          }
         }
-      }
+    }
 
       // Dropdown menu items
       DropdownMenu(
@@ -611,7 +613,7 @@ fun Map(myViewModel: MyViewModel, friendLocation: LatLng?) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
           .align(Alignment.TopStart)
-          .padding(16.dp)
+          .padding(16.dp, top = 80.dp)
       )
       {
         for ((modeString, icon) in modesList) {
