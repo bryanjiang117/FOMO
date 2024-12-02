@@ -1485,7 +1485,7 @@ class MyViewModel : ViewModel() {
                     set("running", false)
                 }) {
                     filter {
-                        eq("game_id", game.id!!)
+                        eq("id", game.id!!)
                     }
                 }
                 game = Game(
@@ -1506,7 +1506,7 @@ class MyViewModel : ViewModel() {
                     set("hunter_id", uid)
                 }) {
                     filter {
-                        eq("game_id", game.id!!)
+                        eq("id", game.id!!)
                     }
                 }
             } catch (e: Exception) {
