@@ -1,11 +1,8 @@
 package com.example.fomo
 
   import android.Manifest
-  import android.app.NotificationChannel
-  import android.app.NotificationManager
   import android.content.Context
   import android.content.pm.PackageManager
-  import android.graphics.Paint.Align
   import android.os.Build
   import androidx.compose.foundation.layout.Column
   import androidx.compose.foundation.layout.Row
@@ -29,15 +26,11 @@ package com.example.fomo
   import androidx.compose.ui.graphics.Color
   import androidx.compose.material3.OutlinedTextField
   import androidx.compose.material3.Text
-  import androidx.compose.material3.Card
-  import androidx.compose.material3.CardDefaults
-  import androidx.compose.material3.MaterialTheme
   import androidx.compose.material3.Icon
   import androidx.compose.material3.TextButton
   import androidx.compose.material3.AlertDialog
   import androidx.compose.ui.text.input.KeyboardType
   import androidx.compose.ui.text.input.ImeAction
-  import androidx.compose.foundation.text.KeyboardActions
   import androidx.compose.runtime.Composable
   import androidx.compose.runtime.getValue
   import androidx.compose.runtime.setValue
@@ -45,18 +38,15 @@ package com.example.fomo
   import androidx.compose.runtime.mutableStateOf
   import cafe.adriel.voyager.core.screen.Screen
   import android.util.Log
-  import android.widget.Space
   import androidx.activity.compose.rememberLauncherForActivityResult
   import androidx.activity.result.contract.ActivityResultContracts
-  import com.example.fomo.models.MyViewModel
+  import com.example.fomo.viewmodel.MyViewModel
   import com.google.android.gms.maps.model.LatLng
-  import androidx.compose.foundation.interaction.MutableInteractionSource
   import androidx.compose.foundation.layout.Box
   import androidx.compose.foundation.layout.Spacer
   import androidx.compose.foundation.layout.fillMaxWidth
   import androidx.compose.foundation.text.KeyboardOptions
   import androidx.compose.material.icons.Icons
-  import androidx.compose.material.ripple.rememberRipple
   import com.example.fomo.const.Colors
   import androidx.compose.material.icons.filled.Check
   import androidx.compose.material.icons.filled.Close
@@ -72,37 +62,27 @@ package com.example.fomo
   import androidx.core.app.NotificationManagerCompat
   import androidx.core.content.ContextCompat
   import com.example.fomo.models.User
-  import io.ktor.client.request.request
   import coil.compose.rememberAsyncImagePainter
   import android.widget.Toast
   import cafe.adriel.voyager.navigator.LocalNavigator
   import androidx.compose.foundation.background
   import androidx.compose.foundation.layout.width
   import androidx.compose.foundation.layout.wrapContentSize
-  import androidx.compose.foundation.layout.wrapContentWidth
   import androidx.compose.material.icons.filled.Add
   import androidx.compose.material.icons.filled.ArrowDropDown
-  import androidx.compose.material.icons.filled.LocationOn
   import androidx.compose.material.icons.filled.Notifications
   import androidx.compose.material.icons.filled.PersonAdd
-  import androidx.compose.material.icons.filled.PersonAddAlt
   import androidx.compose.material.icons.filled.PersonAddAlt1
-  import androidx.compose.material.icons.outlined.PersonAdd
   import androidx.compose.material3.Button
   import androidx.compose.material3.ButtonDefaults
   import androidx.compose.material3.ExperimentalMaterial3Api
   import androidx.compose.material3.ExposedDropdownMenuBox
   import androidx.compose.material3.ExposedDropdownMenuDefaults
-  import androidx.compose.material3.TextField
-  import androidx.compose.material3.TextFieldColors
   import androidx.compose.material3.TextFieldDefaults
   import androidx.compose.runtime.MutableState
   import androidx.compose.runtime.collectAsState
-  import androidx.compose.runtime.mutableIntStateOf
   import androidx.compose.ui.window.Dialog
-  import androidx.lifecycle.viewmodel.compose.viewModel
   import com.example.fomo.models.Group
-  import kotlin.reflect.jvm.internal.impl.descriptors.Visibilities.Local
 
 class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
     @Composable
@@ -192,7 +172,8 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
   @OptIn(ExperimentalMaterial3Api::class)
   @Composable
   fun Nav(openAddFriend: () -> Unit, openCreateGroup: () -> Unit, openGroupRequest: (Pair<User, Group>) -> Unit,
-          friendsList: MutableState<List<User>>, myViewModel: MyViewModel) {
+          friendsList: MutableState<List<User>>, myViewModel: MyViewModel
+  ) {
     var expanded by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -544,7 +525,8 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
   @OptIn(ExperimentalMaterial3Api::class)
   @Composable
   fun AddFriend(isOpen: Boolean, onDismissRequest: () -> Unit, friendsList: List<User>,
-                myViewModel: MyViewModel) {
+                myViewModel: MyViewModel
+  ) {
     if (isOpen) {
       val context = LocalContext.current
       var text by remember { mutableStateOf("") }
@@ -687,7 +669,8 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
 
   @Composable
   fun CreateGroup(isOpen: Boolean, onDismissRequest: () -> Unit, friendsList: MutableState<List<User>>,
-                  myViewModel: MyViewModel) {
+                  myViewModel: MyViewModel
+  ) {
     if (isOpen) {
       val context = LocalContext.current
       var text by remember { mutableStateOf("") }
@@ -766,7 +749,8 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
 
   @Composable
   fun GroupRequest(isOpen: Boolean, onDismissRequest: () -> Unit, selectedGroupReq: Pair<User, Group>,
-                   friendsList: MutableState<List<User>>, myViewModel: MyViewModel) {
+                   friendsList: MutableState<List<User>>, myViewModel: MyViewModel
+  ) {
     if (isOpen) {
       val sender: User = selectedGroupReq.first
       val group: Group = selectedGroupReq.second

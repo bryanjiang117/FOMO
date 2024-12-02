@@ -76,7 +76,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 
 class MyViewModel : ViewModel() {
 
-
     private val _bitmapDescriptor = mutableStateOf<BitmapDescriptor?>(null)
     private val _sessionRestored = MutableStateFlow(false)
     private val _isDataLoaded = MutableStateFlow(false)
@@ -963,6 +962,15 @@ class MyViewModel : ViewModel() {
                         eq("username", username)
                     }
                 }.decodeSingle<User>()
+                val existingRequestCheck = supabase.from("friendship").select() { // Check if the same request already exists
+                    filter {
+                        eq("requester_id", uid)
+                        eq("receiver_id", receiver.uid)
+                    }
+                }.decodeList<Friendship>()
+                if (existingRequestCheck.isNotEmpty()) { // then just say success bc it already exists
+                    onResult(true)
+                }
                 val oppositeCheck = supabase.from("friendship").select() { // check if opposite request exists
                     filter {
                         eq("requester_id", receiver.uid)
