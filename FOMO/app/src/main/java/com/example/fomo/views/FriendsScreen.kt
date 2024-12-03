@@ -395,7 +395,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
     // End of Remove Friend Confirmation
 
     // List of Friend Requests (above friends)
-    if (groupIndex == -1) {
+    if (groupIndex == -1 && myViewModel.requestList.isNotEmpty()) {
       Column(
         verticalArrangement = Arrangement.spacedBy(16.dp)
       ) {
