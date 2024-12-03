@@ -1,4 +1,5 @@
 # Team-6
+# FOMO
 
 We are building a real-time Map UI social app for students and young adults to stay connected with their friends and make their busy days just a little bit more fun.  
 
@@ -55,6 +56,15 @@ https://git.uwaterloo.ca/b3jiang/team-6/-/releases/0.20
 APK: https://git.uwaterloo.ca/b3jiang/team-6/-/blob/main/releases/fomo030.apk?ref_type=heads  
 https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Version-0.30-Release  
 https://git.uwaterloo.ca/b3jiang/team-6/-/releases/0.30
+
+## User Documentation  
+https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/User-Documentation  
+
+## Design Diagrams  
+https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Design-Diagrams
+
+## Team Reflections  
+https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Reflection  
 
 ## JDK Version
 21.04
