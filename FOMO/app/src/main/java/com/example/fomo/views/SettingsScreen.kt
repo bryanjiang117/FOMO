@@ -83,7 +83,10 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
           onCheckedChange = { isEnabled ->
             isLocationSharingEnabled = isEnabled
             openSetting(context)
-          }
+          },
+          colors = SwitchDefaults.colors(
+            checkedTrackColor = Colors.primary
+          )
         )
       }
 
@@ -103,7 +106,10 @@ class SettingsScreen(private val myViewModel: MyViewModel) : Screen {
           onCheckedChange = { isEnabled ->
             isNotificationSharingEnabled = isEnabled
             openSetting(context)
-          }
+          },
+          colors = SwitchDefaults.colors(
+            checkedTrackColor = Colors.primary
+          )
         )
       }
 

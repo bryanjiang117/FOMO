@@ -436,7 +436,7 @@ fun PlaceSettings(myViewModel: MyViewModel, cameraPositionState: CameraPositionS
             myViewModel.addingPlace = false
           },
           colors = ButtonDefaults.buttonColors(
-            containerColor = Colors.lightgray,
+            containerColor = Colors.lightGray,
             contentColor = Color.Black
           ),
           modifier = Modifier

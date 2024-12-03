@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import coil.compose.rememberAsyncImagePainter
 import com.example.fomo.LoadingScreen
 import com.example.fomo.R
+import com.example.fomo.consts.Colors
 import com.example.fomo.viewmodel.MyViewModel
 
 
@@ -86,6 +88,9 @@ fun ProfileContent(myViewModel: MyViewModel) {
       ){
         Button(
           contentPadding = PaddingValues(0.dp),
+          colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.background
+          ),
           modifier = Modifier
           .size(125.dp)
           .clip(CircleShape),
@@ -122,7 +127,7 @@ fun ProfileContent(myViewModel: MyViewModel) {
             newValue = myViewModel.displayName
           }
         ) {
-          Text("Change", color = MaterialTheme.colorScheme.primary)
+          Text("Change", color = Colors.darkPrimary)
         }
       }
 
@@ -144,7 +149,7 @@ fun ProfileContent(myViewModel: MyViewModel) {
             newValue = myViewModel.username
           }
         ) {
-          Text("Change", color = MaterialTheme.colorScheme.primary)
+          Text("Change", color = Colors.darkPrimary)
         }
       }
 
@@ -166,7 +171,7 @@ fun ProfileContent(myViewModel: MyViewModel) {
             newValue = ""
           }
         ) {
-          Text("Change", color = MaterialTheme.colorScheme.primary)
+          Text("Change", color = Colors.darkPrimary)
         }
       }
 
@@ -183,18 +188,32 @@ fun ProfileContent(myViewModel: MyViewModel) {
         )
 
         Box {
-          Button(
-            shape = RoundedCornerShape(24.dp),
-            onClick = { droppedDown = !droppedDown },
+          Box(
             modifier = Modifier
               .padding(6.dp)
+              .border(
+                width = 1.dp, // Set the border width
+                color = Colors.primary, // Choose your border color
+                shape = RoundedCornerShape(24.dp) // Match the button's corner shape
+              )
           ) {
-            Text(
-              text = "${myViewModel.status.emoji} ${myViewModel.status.description}",
-              fontSize = 14.sp,
-              fontWeight = FontWeight.Normal,
-              modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
-            )
+            Button(
+              shape = RoundedCornerShape(24.dp),
+              onClick = { droppedDown = !droppedDown },
+              colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                contentColor = Color.Black
+              ),
+              modifier = Modifier
+                .padding(0.dp)
+            ) {
+              Text(
+                text = "${myViewModel.status.emoji} ${myViewModel.status.description}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+              )
+            }
           }
 
           // Dropdown menu items
