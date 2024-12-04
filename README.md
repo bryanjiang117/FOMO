@@ -60,6 +60,11 @@ APK: https://git.uwaterloo.ca/b3jiang/team-6/-/blob/main/releases/fomo030.apk?re
 https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Version-0.30-Release  
 https://git.uwaterloo.ca/b3jiang/team-6/-/releases/0.30
 
+1.00:
+APK: https://git.uwaterloo.ca/b3jiang/team-6/-/blob/main/releases/fomo100.apk?ref_type=heads  
+https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/Version-1.00-Release  
+https://git.uwaterloo.ca/b3jiang/team-6/-/releases/1.00
+
 ## User Documentation  
 https://git.uwaterloo.ca/b3jiang/team-6/-/wikis/User-Documentation  
 
