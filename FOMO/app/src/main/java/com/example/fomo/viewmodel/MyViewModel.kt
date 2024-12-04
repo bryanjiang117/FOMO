@@ -238,14 +238,6 @@ class MyViewModel(
             }
         }
     }
-//    private val supabase = createSupabaseClient(
-//        supabaseUrl = "https://vwapghztewutqqmzaoib.supabase.co",
-//        supabaseKey = BuildConfig.SUPABASE_KEY
-//    ) {
-//        install(Postgrest)
-//        install(Auth)
-//        install(Storage)
-//    }
 
     private val ktorClient = HttpClient(CIO) {
         install(ContentNegotiation) {
@@ -839,22 +831,6 @@ class MyViewModel(
         }
     }
 
-//    private fun showNotification(context: Context, message: String) {
-//        val builder = NotificationCompat.Builder(context, "group_invite_channel")
-//            .setSmallIcon(R.drawable.notification_icon) // Replace with your icon
-//            .setContentTitle("New Group Invitation")
-//            .setContentText(message)
-//            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-//
-//        with(NotificationManagerCompat.from(context)) {
-//            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || ContextCompat.checkSelfPermission(
-//                    context, Manifest.permission.POST_NOTIFICATIONS
-//                ) == PackageManager.PERMISSION_GRANTED
-//            ) {
-//                notify(System.currentTimeMillis().toInt(), builder.build()) // Unique ID for each notification
-//            }
-//        }
-//    }
 
     fun fetchDatabase(context: Context) {
         viewModelScope.launch {

@@ -211,7 +211,7 @@ fun Map(myViewModel: MyViewModel, friendLocation: LatLng?) {
         Log.d("mapdebug", "marker loaded at ${myViewModel.userLatitude}")
 
         // display friends
-        val friendsList = if (groupIndex == -1) myViewModel.friendsList else myViewModel.groupMemberList
+        val friendsList = if (groupIndex == -1 || myViewModel.groupList.isEmpty()) myViewModel.friendsList else myViewModel.groupMemberList
         for(friend in friendsList) {
           val friendLocation = LatLng(friend.latitude, friend.longitude)
           val friendStatus = myViewModel.statusList.filter {it.id == friend.status_id}[0]
@@ -302,7 +302,7 @@ fun Map(myViewModel: MyViewModel, friendLocation: LatLng?) {
         .padding(16.dp)
     ) {
       OutlinedTextField(
-        value = if (groupIndex == -1) "All Friends" else myViewModel.groupList[groupIndex].name,
+        value = if (groupIndex == -1 || myViewModel.groupList.isEmpty()) "All Friends" else myViewModel.groupList[groupIndex].name,
         onValueChange = {},
         readOnly = true,
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = groupsExpanded) },

@@ -282,6 +282,11 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
                           Toast.makeText(context, "Error: Group Remove Failed", Toast.LENGTH_SHORT).show()
                         }
                         }
+                        myViewModel.selectGroup(-1)
+                        myViewModel.getGroupMembers(context, myViewModel.groupList[i].id!!) { result ->
+                          friendsList.value = result
+                        }
+                        myViewModel.fetchPlaces() // fetch new group places
                         expanded = false
                       }
                   ) {
@@ -756,7 +761,7 @@ class FriendsScreen(private val myViewModel: MyViewModel) : Screen {
                       }
                       myViewModel.fetchPlaces() // fetch new group places
                     } else {
-                      Toast.makeText(context, "Error: Input too long (above 30 characters)", Toast.LENGTH_SHORT)
+                      Toast.makeText(context, "Error: Invalid Input (too long or short)", Toast.LENGTH_SHORT)
                         .show()
                     }
                   }

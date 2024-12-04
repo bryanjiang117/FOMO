@@ -163,6 +163,9 @@ fun PlaceNav(myViewModel: MyViewModel) {
         Toast.makeText(context, "Error: Group Remove Failed", Toast.LENGTH_SHORT).show()
       }
     }
+    myViewModel.selectGroup(-1)
+    myViewModel.fetchPlaces() // fetch new group places
+    showLeaveGroupConfirmation = false
   }
 
   if (showLeaveGroupConfirmation && selectedGroup != null) {
@@ -460,7 +463,7 @@ fun PlaceSettings(myViewModel: MyViewModel, cameraPositionState: CameraPositionS
                   Toast.makeText(context, "Place Created", Toast.LENGTH_SHORT).show()
                 } else {
                   Toast.makeText(
-                    context, "Error: Something went wrong",
+                    context, "Error: Invalid Place name",
                     Toast.LENGTH_SHORT
                   ).show()
                 }

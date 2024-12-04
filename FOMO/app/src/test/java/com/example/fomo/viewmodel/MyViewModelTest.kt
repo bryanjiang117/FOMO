@@ -1,5 +1,6 @@
 package com.example.fomo.viewmodel
 
+import com.example.fomo.entities.Status
 import com.google.android.gms.maps.model.LatLng
 import io.github.jan.supabase.SupabaseClient
 import io.mockk.mockk
@@ -23,6 +24,11 @@ class MyViewModelTest {
   fun testBasicFunctionality() {
     val viewModel = viewModel
     assertNotNull(viewModel)
+  }
+
+  @Test
+  fun imageURlTest() {
+    assertEquals("https://vwapghztewutqqmzaoib.supabase.co/storage/v1/object/public/profile-pictures/hi.jpg", viewModel.getImgUrl("hi"))
   }
 
 
